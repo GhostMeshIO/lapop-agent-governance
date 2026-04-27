@@ -1,0 +1,771 @@
+# schemas/strategy-update-patch.schema.yaml
+#
+# Canonical shared StrategyUpdatePatch schema for lapop-agent-governance.
+#
+# Purpose:
+#   StrategyUpdatePatch is the reversible, benchmark-gated, policy-checkable
+#   update object emitted by SLL-003 when clean execution outcomes suggest an
+#   operational strategy improvement.
+#
+# Status:
+#   v0.2 schema-normalization candidate
+
+schema_id: strategy-update-patch
+schema_version: "0.2.0"
+schema_kind: canonical_shared_schema
+schema_owner: SLL-003
+schema_status: draft
+
+title: StrategyUpdatePatch
+description: >
+  Canonical strategy update patch object for contamination-safe operational
+  learning. StrategyUpdatePatch records proposed changes to routing priors,
+  repair strategy rules, validation thresholds, escalation triggers, merge
+  preferences, stop/continue rules, or tool reliability priors. It must be
+  generated only from learning-eligible execution outcomes and must pass
+  policy and benchmark gates before application.
+
+type: object
+additionalProperties: false
+
+required:
+  - patch_id
+  - parent_ledger_head
+  - patch_type
+  - scope
+  - learning_basis
+  - proposed_changes
+  - safety_gates
+  - benchmark_requirements
+  - rollback_plan
+  - policy_check
+  - lifecycle
+  - created_by
+  - created_at
+
+properties:
+  patch_id:
+    type: string
+    format: uuid
+    description: >
+      Stable UUID for this strategy patch.
+
+  parent_ledger_head:
+    type:
+      - string
+      - "null"
+    description: >
+      Strategy ledger head that this patch is based on. Required before
+      application. May be null only for draft/manual candidate patches.
+
+  patch_type:
+    type: string
+    enum:
+      - routing_prior_update
+      - repair_strategy_update
+      - validation_threshold_update
+      - escalation_trigger_update
+      - merge_preference_update
+      - stop_continue_rule_update
+      - tool_reliability_update
+    description: >
+      Type of operational strategy table or rule this patch modifies.
+
+  patch_title:
+    type:
+      - string
+      - "null"
+    description: >
+      Human-readable short title for this strategy patch.
+
+  patch_summary:
+    type:
+      - string
+      - "null"
+    description: >
+      Human-readable summary of the patch and why it exists.
+
+  scope:
+    type: object
+    additionalProperties: false
+    required:
+      - project_id
+      - task_type
+      - artifact_type
+      - risk_level
+      - agent_class
+    properties:
+      project_id:
+        type:
+          - string
+          - "null"
+      repository_id:
+        type:
+          - string
+          - "null"
+      task_type:
+        type:
+          - string
+          - "null"
+        enum:
+          - analysis
+          - code_generation
+          - code_repair
+          - schema_design
+          - documentation
+          - research
+          - validation
+          - audit
+          - merge
+          - planning
+          - data_operation
+          - policy_review
+          - strategy_learning
+          - economic_decision
+          - collaboration_health
+          - temporal_governance
+          - other
+          - null
+      artifact_type:
+        type:
+          - string
+          - "null"
+        enum:
+          - file
+          - module
+          - schema
+          - dataset
+          - interface
+          - config
+          - diagram
+          - report
+          - patch
+          - prompt
+          - benchmark
+          - execution_record
+          - other
+          - null
+      failure_type:
+        type:
+          - string
+          - "null"
+        description: >
+          Optional failure pattern this patch targets.
+        examples:
+          - csv_dictwriter_fieldname_mismatch
+          - schema_mismatch
+          - repeated_repair_failure
+      risk_level:
+        type:
+          - string
+          - "null"
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+          - unknown
+          - null
+      agent_class:
+        type:
+          - string
+          - "null"
+      agent_role:
+        type:
+          - string
+          - "null"
+      tool_id:
+        type:
+          - string
+          - "null"
+      validation_type:
+        type:
+          - string
+          - "null"
+      merge_method:
+        type:
+          - string
+          - "null"
+      tags:
+        type: array
+        items:
+          type: string
+        default: []
+
+  learning_basis:
+    type: object
+    additionalProperties: false
+    required:
+      - contamination_free
+      - learning_eligible
+      - evidence_outcome_ids
+      - excluded_quarantine_ids
+      - sample_count
+      - confidence
+    properties:
+      contamination_free:
+        type: boolean
+        description: >
+          Must be true for any active strategy patch.
+      learning_eligible:
+        type: boolean
+        description: >
+          True only if the source execution outcomes passed SLL eligibility.
+      evidence_outcome_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+        description: >
+          StrategyOutcomeRecord IDs supporting the patch.
+      evidence_execution_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+        description: >
+          Execution_Record IDs supporting the patch.
+      excluded_quarantine_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+        description: >
+          Quarantine records explicitly excluded from positive learning.
+      sample_count:
+        type: integer
+        minimum: 0
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: >
+          Confidence in the patch. Single-run patches should remain low confidence.
+      rationale:
+        type:
+          - string
+          - "null"
+      limitations:
+        type: array
+        items:
+          type: string
+        default: []
+
+  proposed_changes:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/StrategyChange"
+    description: >
+      Explicit reversible changes proposed by this patch.
+
+  safety_gates:
+    type: object
+    additionalProperties: false
+    required:
+      - policy_check_required
+      - benchmark_gate_required
+      - rollback_required
+      - contamination_gate_required
+      - human_review_required
+      - supervisor_review_required
+    properties:
+      policy_check_required:
+        type: boolean
+        default: true
+      benchmark_gate_required:
+        type: boolean
+        default: true
+      rollback_required:
+        type: boolean
+        default: true
+      contamination_gate_required:
+        type: boolean
+        default: true
+      human_review_required:
+        type: boolean
+        default: false
+      supervisor_review_required:
+        type: boolean
+        default: true
+      minimum_confidence_required:
+        type:
+          - number
+          - "null"
+        minimum: 0
+        maximum: 1
+      minimum_sample_count_required:
+        type:
+          - integer
+          - "null"
+        minimum: 0
+
+  benchmark_requirements:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - benchmark_id
+        - benchmark_type
+        - description
+        - required_to_pass
+      properties:
+        benchmark_id:
+          type: string
+          minLength: 1
+        benchmark_type:
+          type: string
+          enum:
+            - clean_success_case
+            - contaminated_case
+            - boundary_violation_case
+            - policy_conflict_case
+            - regression_case
+            - cost_latency_case
+            - human_reversal_case
+            - merge_regret_case
+            - rollback_case
+            - other
+        description:
+          type: string
+          minLength: 1
+        required_to_pass:
+          type: boolean
+        expected_result:
+          type:
+            - string
+            - "null"
+
+  benchmark_gate_result:
+    type:
+      - object
+      - "null"
+    additionalProperties: false
+    required:
+      - gate_id
+      - benchmark_suite_id
+      - passed
+      - regression_detected
+      - metrics
+      - failure_details
+      - created_at
+    properties:
+      gate_id:
+        type: string
+        format: uuid
+      benchmark_suite_id:
+        type: string
+      passed:
+        type: boolean
+      regression_detected:
+        type: boolean
+      metrics:
+        type: object
+        additionalProperties: false
+        required:
+          - quality_delta
+          - contamination_delta
+          - cost_delta
+          - latency_delta
+          - boundary_violation_delta
+          - human_reversal_delta
+        properties:
+          quality_delta:
+            type: number
+          contamination_delta:
+            type: number
+          cost_delta:
+            type: number
+          latency_delta:
+            type: number
+          boundary_violation_delta:
+            type: number
+          human_reversal_delta:
+            type: number
+          merge_regret_delta:
+            type:
+              - number
+              - "null"
+          rollback_success_delta:
+            type:
+              - number
+              - "null"
+      failure_details:
+        type: array
+        items:
+          type: string
+        default: []
+      created_at:
+        type: string
+        format: date-time
+
+  rollback_plan:
+    type: object
+    additionalProperties: false
+    required:
+      - rollback_available
+      - rollback_pointer
+      - rollback_steps
+      - affected_tables
+      - validation_after_rollback_required
+    properties:
+      rollback_available:
+        type: boolean
+      rollback_pointer:
+        type:
+          - string
+          - "null"
+        description: >
+          Ledger head or serialized prior table state used for rollback.
+      rollback_steps:
+        type: array
+        items:
+          type: string
+        default: []
+      affected_tables:
+        type: array
+        items:
+          type: string
+        default: []
+      validation_after_rollback_required:
+        type: boolean
+        default: true
+      rollback_risk:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+          - unknown
+      rollback_notes:
+        type:
+          - string
+          - "null"
+
+  policy_check:
+    type: object
+    additionalProperties: false
+    required:
+      - policy_checked
+      - allowed
+      - policy_attestation_id
+      - allowance_result_id
+      - constraints
+    properties:
+      policy_checked:
+        type: boolean
+      allowed:
+        type:
+          - boolean
+          - "null"
+      policy_attestation_id:
+        type:
+          - string
+          - "null"
+        format: uuid
+      allowance_result_id:
+        type:
+          - string
+          - "null"
+        format: uuid
+      constraints:
+        type: array
+        items:
+          type: string
+        default: []
+      denial_reason:
+        type:
+          - string
+          - "null"
+
+  ledger_commit:
+    type:
+      - object
+      - "null"
+    additionalProperties: false
+    required:
+      - ledger_entry_id
+      - previous_ledger_head
+      - new_ledger_head
+      - patch_applied
+      - applied_at
+    properties:
+      ledger_entry_id:
+        type: string
+        format: uuid
+      previous_ledger_head:
+        type:
+          - string
+          - "null"
+      new_ledger_head:
+        type:
+          - string
+          - "null"
+      patch_applied:
+        type: boolean
+      applied_by:
+        type:
+          - string
+          - "null"
+      applied_at:
+        type: string
+        format: date-time
+
+  lifecycle:
+    type: object
+    additionalProperties: false
+    required:
+      - state
+      - created_as_candidate
+      - applied
+      - superseded_by_patch_id
+      - rejected_reason
+    properties:
+      state:
+        type: string
+        enum:
+          - draft
+          - candidate
+          - policy_pending
+          - benchmark_pending
+          - approved
+          - applied
+          - rejected
+          - superseded
+          - rolled_back
+          - quarantined
+          - archived
+      created_as_candidate:
+        type: boolean
+      applied:
+        type: boolean
+      superseded_by_patch_id:
+        type:
+          - string
+          - "null"
+        format: uuid
+      rejected_reason:
+        type:
+          - string
+          - "null"
+      quarantine_reason:
+        type:
+          - string
+          - "null"
+      rolled_back_at:
+        type:
+          - string
+          - "null"
+        format: date-time
+      archived_at:
+        type:
+          - string
+          - "null"
+        format: date-time
+
+  created_by:
+    type: string
+    minLength: 1
+    description: >
+      Agent, layer, or human that created this patch.
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type:
+      - string
+      - "null"
+    format: date-time
+
+  tags:
+    type: array
+    items:
+      type: string
+    default: []
+
+$defs:
+  StrategyChange:
+    type: object
+    additionalProperties: false
+    required:
+      - change_id
+      - target_table
+      - target_key
+      - old_value
+      - new_value
+      - change_reason
+      - confidence
+      - reversible
+    properties:
+      change_id:
+        type: string
+        format: uuid
+      target_table:
+        type: string
+        enum:
+          - routing_priors
+          - repair_strategy_rules
+          - validation_threshold_hints
+          - escalation_trigger_rules
+          - merge_preferences
+          - stop_continue_rules
+          - tool_reliability_priors
+          - model_role_performance
+          - artifact_type_risk_hints
+          - dependency_resolution_patterns
+          - other
+      target_key:
+        type: string
+        minLength: 1
+      old_value:
+        description: >
+          Prior value. May be null for newly created strategy entry.
+      new_value:
+        description: >
+          New proposed value.
+      change_reason:
+        type: string
+        minLength: 1
+      confidence:
+        type: number
+        minimum: 0
+        maximum: 1
+      reversible:
+        type: boolean
+      expected_impact:
+        type:
+          - string
+          - "null"
+      risk_notes:
+        type: array
+        items:
+          type: string
+        default: []
+
+examples:
+  - patch_id: "77777777-7777-4777-8777-777777777777"
+    parent_ledger_head: "strategy-ledger-head-v0"
+    patch_type: repair_strategy_update
+    patch_title: "Prefer fieldname-union repair for CSV DictWriter wrong_fields errors"
+    patch_summary: >
+      Low-confidence candidate patch based on a clean runtime repair where
+      csv.DictWriter failed because rows contained keys not present in fieldnames.
+    scope:
+      project_id: lapop-agent-governance
+      repository_id: GhostMeshIO/lapop-agent-governance
+      task_type: code_repair
+      artifact_type: file
+      failure_type: csv_dictwriter_fieldname_mismatch
+      risk_level: low
+      agent_class: tool_using_worker
+      agent_role: worker
+      tool_id: python
+      validation_type: runtime_test
+      merge_method: supervisor_merge
+      tags:
+        - csv
+        - repair
+        - python
+    learning_basis:
+      contamination_free: true
+      learning_eligible: true
+      evidence_outcome_ids:
+        - "88888888-8888-4888-8888-888888888888"
+      evidence_execution_ids:
+        - "22222222-2222-4222-8222-222222222222"
+      excluded_quarantine_ids: []
+      sample_count: 1
+      confidence: 0.35
+      rationale: >
+        Single clean example supports a scoped repair preference, not a global rule.
+      limitations:
+        - "Only one clean supporting run."
+        - "Must benchmark against unrelated CSV layouts."
+    proposed_changes:
+      - change_id: "99999999-9999-4999-8999-999999999999"
+        target_table: repair_strategy_rules
+        target_key: csv_dictwriter_fieldname_mismatch
+        old_value: null
+        new_value:
+          preferred_repair_strategy: compute_fieldnames_from_union_of_all_row_keys
+          validation: run_csv_writer_regression_case
+        change_reason: >
+          DictWriter errors with wrong_fields are often resolved by computing
+          fieldnames from the union of row keys before writing.
+        confidence: 0.35
+        reversible: true
+        expected_impact: "Reduce repeated CSV repair failures for this specific error."
+        risk_notes:
+          - "May alter output column ordering unless canonical ordering is specified."
+    safety_gates:
+      policy_check_required: true
+      benchmark_gate_required: true
+      rollback_required: true
+      contamination_gate_required: true
+      human_review_required: false
+      supervisor_review_required: true
+      minimum_confidence_required: 0.3
+      minimum_sample_count_required: 1
+    benchmark_requirements:
+      - benchmark_id: csv-wrong-fields-clean-case
+        benchmark_type: clean_success_case
+        description: "CSV row contains extra key not in fieldnames; repair should pass."
+        required_to_pass: true
+        expected_result: "Writer completes with canonical fieldnames."
+      - benchmark_id: csv-unrelated-format-regression
+        benchmark_type: regression_case
+        description: "Existing fixed-field CSV output should not be changed unexpectedly."
+        required_to_pass: true
+        expected_result: "No regression."
+      - benchmark_id: csv-contaminated-traceback-claim
+        benchmark_type: contaminated_case
+        description: "Generated claim of CSV failure without traceback should not trigger learning."
+        required_to_pass: true
+        expected_result: "Patch not applied from unsupported evidence."
+    benchmark_gate_result: null
+    rollback_plan:
+      rollback_available: true
+      rollback_pointer: "strategy-ledger-head-v0"
+      rollback_steps:
+        - "Restore repair_strategy_rules.csv_dictwriter_fieldname_mismatch to prior value."
+        - "Re-run benchmark gate."
+      affected_tables:
+        - repair_strategy_rules
+      validation_after_rollback_required: true
+      rollback_risk: low
+      rollback_notes: "No artifact content rollback required; strategy table only."
+    policy_check:
+      policy_checked: false
+      allowed: null
+      policy_attestation_id: null
+      allowance_result_id: null
+      constraints:
+        - require_benchmark_gate
+        - require_rollback_plan
+        - require_contamination_free
+      denial_reason: null
+    ledger_commit: null
+    lifecycle:
+      state: candidate
+      created_as_candidate: true
+      applied: false
+      superseded_by_patch_id: null
+      rejected_reason: null
+      quarantine_reason: null
+      rolled_back_at: null
+      archived_at: null
+    created_by: strategy_learning_worker
+    created_at: "2026-04-27T00:00:00Z"
+    updated_at: null
+    tags:
+      - strategy
+      - repair-rule
+      - benchmark-required
