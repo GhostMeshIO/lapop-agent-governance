@@ -1,213 +1,119 @@
-# LAPOP Agent Governance
+# lapop-agent-governance
 
-**Production-oriented governance protocols for auditable, contamination-safe multi-agent LLM orchestration.**
+A governance protocol for multi-agent LLM execution, repair, audit, learning, collaboration, and rollback.
 
-`lapop-agent-governance` is a public specification stack for coordinating multiple LLM agents across long-running software, research, audit, documentation, and artifact-generation workflows.
-
-It is designed for people building serious multi-agent systems where agents need to:
-
-- work on bounded artifacts,
-- exchange structured dependency notes,
-- avoid cross-agent contamination,
-- preserve reproducibility,
-- validate and merge outputs safely,
-- learn from clean execution history,
-- manage cost and value-of-information decisions,
-- detect collaboration pathologies,
-- and support rollback across multi-cycle work.
-
-This is not a toy “agent swarm” prompt pack.
-
-It is a governance architecture for disciplined multi-agent execution.
+**Tagline:** Boundaries for useful agents.
 
 ---
 
-## Repository
+## Overview
+
+`lapop-agent-governance` is a framework for coordinating multi-agent and multi-model LLM workflows without losing control of artifacts, evidence, policy, validation, or time.
+
+It is designed for workflows where a human operator coordinates several models or agents at once:
+
+- GPT as supervisor,
+- DeepSeek as implementation worker,
+- Z.ai / GLM as local repo or tool agent,
+- Grok as novelty/adversarial critic,
+- Claude as coherence/design critic,
+- Gemini as structured documentation worker,
+- local scripts as validators,
+- and a human as final authority.
+
+The core idea:
+
+> LLM systems do not fail only because they are not smart enough.  
+> They fail because they lack governance boundaries.
+
+This repo provides those boundaries.
+
+---
+
+## What This Project Solves
+
+Multi-agent LLM workflows often break down through:
+
+- hallucinated evidence,
+- invented test results,
+- unowned artifact edits,
+- hidden schema drift,
+- critic claims treated as truth,
+- uncontrolled strategy learning,
+- repeated repair loops,
+- stale branches,
+- merge/rollback oscillation,
+- human review overload,
+- and false consensus between models.
+
+`lapop-agent-governance` gives the workflow a structured operating system:
 
 ```text
-GhostMeshIO/lapop-agent-governance
+task → context → assignment → boundary → policy check → worker output
+     → validation → audit → merge/repair/reject → checkpoint
+     → optional learning only if clean
 ````
 
 ---
 
-## Status
+## Governance Stack
 
-```yaml
-Project_Status: Early_Public_Specification
-Version: 0.1
-Primary_Mode: Protocol / Architecture / Prompt-Orchestration Stack
-Implementation_Status: Reference implementation pending
+The framework is organized into seven layers.
+
+| Layer       | Name                                    | Function                                           |
+| ----------- | --------------------------------------- | -------------------------------------------------- |
+| `LAPOP-003` | LLM-Agent Prompt Orchestration Protocol | Execution backbone                                 |
+| `CDO-003`   | Coordination Discipline Overlay         | Artifact boundaries and dependency notes           |
+| `PCL-003`   | Policy Composition Layer                | Policy allow/deny decisions                        |
+| `SLL-003`   | Strategy Learning Layer                 | Clean-run strategy learning                        |
+| `EIL-003`   | Economic Intelligence Layer             | Cost/value stop-continue decisions                 |
+| `CHL-003`   | Collaboration Health Layer              | Trust, disagreement, and collaboration health      |
+| `TGL-003`   | Temporal Governance Layer               | Checkpoints, rollback, stale branches, oscillation |
+
+Each layer has a distinct responsibility.
+
+No layer should silently absorb all authority.
+
+---
+
+## Core Principle
+
+```text
+Do not trust the model.
+Trust the governed process.
 ```
 
-Current focus:
+The framework assumes models are useful but unreliable unless governed.
 
-1. Publish the consolidated protocol documents.
-2. Normalize shared schemas.
-3. Define a minimal reference runner.
-4. Build testable examples for multi-agent coding, auditing, and research workflows.
-5. Develop benchmark gates for contamination safety, boundary discipline, rollback, and merge quality.
+It does not require models to be perfect.
 
----
+It requires the process to be:
 
-## Purpose
-
-Modern multi-agent LLM systems often focus on:
-
-* planner / worker / critic patterns,
-* tool use,
-* parallel generation,
-* self-review,
-* and final answer synthesis.
-
-That is not enough for real long-running work.
-
-This project focuses on the missing control-plane machinery:
-
-* Who owns which artifact?
-* Who is allowed to edit what?
-* How are cross-file changes requested?
-* How do agents preserve disagreements instead of forcing bad merges?
-* How do we prevent hallucinated critic output from becoming “evidence”?
-* How do we rollback a multi-cycle execution?
-* How do we learn from previous runs without learning from contaminated runs?
-* How do we decide when another tool call, audit, retrieval, or human review is worth the cost?
-
-`lapop-agent-governance` provides a layered answer.
+* artifact-bound,
+* evidence-aware,
+* policy-aware,
+* validation-driven,
+* contamination-safe,
+* rollback-compatible,
+* and auditable.
 
 ---
 
-## Core Stack
-
-| Layer       | Name                                    | Purpose                                                                                                      |
-| ----------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `LAPOP-003` | LLM-Agent Prompt Orchestration Protocol | Runtime execution backbone: task state, validation, audit, merge, repair, provenance, reproducibility        |
-| `CDO-003`   | Coordination Discipline Overlay         | Artifact boundaries, dependency notes, lane discipline, ownership transfer, boundary violation handling      |
-| `PCL-003`   | Policy Composition Layer                | Deterministic policy composition, conflict resolution, scoped exceptions, policy attestation                 |
-| `SLL-003`   | Strategy Learning Layer                 | Contamination-safe learning from outcomes, repair patterns, routing priors, benchmark-gated strategy updates |
-| `EIL-003`   | Economic Intelligence Layer             | Value-of-information decisions, tool cost, human review cost, regret, stop/probe logic                       |
-| `CHL-003`   | Collaboration Health Layer              | Boundary health, trust graph, disagreement preservation, emergence risk, collaboration metrics               |
-| `TGL-003`   | Temporal Governance Layer               | Aging, archival, deadlock prevention, oscillation control, rollback, speculative branch preservation         |
-
----
-
-## Design Philosophy
-
-The stack follows a few non-negotiable principles.
-
-### 1. Artifact boundaries matter
-
-Agents should not freely mutate the entire workspace.
-
-Each worker receives an assigned artifact, module, file, schema, report, or interface. If another artifact must change, the worker emits a structured dependency note instead of silently editing outside its lane.
-
-### 2. Claims require grounding
-
-Outputs must be based on:
-
-* direct inspection,
-* tool results,
-* cited sources,
-* validated schemas,
-* executable tests,
-* or explicit uncertainty.
-
-Unsupported claims are treated as grounding failures.
-
-### 3. Contamination must not enter memory
-
-Speculative outputs, critic hallucinations, failed repairs, or contaminated executions must not become authoritative system knowledge.
-
-Execution records carry a `contamination_free` flag. Learning, trust updates, collaboration metrics, and strategy updates ignore contaminated runs.
-
-### 4. Disagreement can be valuable
-
-Not all disagreement should be merged away.
-
-Some disagreements should be preserved as first-class artifacts with non-merge reasons, evidence, intervention prompts, and revalidation cycles.
-
-### 5. Learning must be reversible
-
-The system may learn better routing, repair patterns, validation thresholds, or escalation triggers, but only through explicit, benchmark-gated, reversible strategy patches.
-
-No hidden self-modification.
-
-### 6. Reproducibility is a first-class requirement
-
-Every significant execution should be replayable or explainably non-replayable.
-
-Checkpoints, hashes, policy attestations, strategy ledger heads, tool versions, model versions, retrieval snapshots, and validation results should be preserved.
-
----
-
-## What Makes This Different
-
-Most multi-agent systems already include common patterns like:
-
-* planner / worker / critic / supervisor roles,
-* task decomposition,
-* validation,
-* retry logic,
-* routing,
-* memory,
-* and final merge.
-
-This project adds stricter governance primitives:
-
-* artifact boundaries with forbidden actions,
-* structured dependency notes with lifecycle states,
-* anti-contamination barriers,
-* policy attestation records,
-* deterministic policy precedence,
-* strategy memory ledger,
-* benchmark regression gates,
-* value-of-information decisioning,
-* disagreement preservation artifacts,
-* temporal rollback candidates,
-* oscillation detection,
-* trust decay,
-* boundary-health metrics,
-* speculative branch preservation,
-* and constitutional review cycles.
-
----
-
-## Example Use Cases
-
-### Multi-agent code repair
-
-Assign agents to specific files or modules. Each agent may only modify its owned artifact. Cross-module changes are requested through dependency notes. Supervisor validates, audits, merges, and records provenance.
-
-### Large research synthesis
-
-Separate agents handle literature review, equation extraction, critique, falsifiability analysis, and implementation blueprinting. Disagreements are preserved instead of flattened.
-
-### Long-running architecture design
-
-Policy, strategy, economic, collaboration, and temporal governance layers evolve across cycles while keeping rollback and contamination barriers intact.
-
-### Agent benchmark laboratory
-
-Run multiple model workers on the same task, compare boundary discipline, hallucination rate, cost, repair success, and merge quality.
-
-### Human-in-the-loop governance
-
-Human review is modeled as scarce and costly. The system decides when escalation is worth it rather than treating human attention as free.
-
----
-
-## Recommended Repository Layout
+## Repository Structure
 
 ```text
 lapop-agent-governance/
 ├── README.md
 ├── LICENSE
 ├── CHANGELOG.md
+│
 ├── docs/
 │   ├── overview.md
 │   ├── architecture.md
 │   ├── common-vs-novel.md
 │   ├── implementation-roadmap.md
 │   └── glossary.md
+│
 ├── specs/
 │   ├── LAPOP-003.md
 │   ├── CDO-003.md
@@ -216,6 +122,7 @@ lapop-agent-governance/
 │   ├── EIL-003.md
 │   ├── CHL-003.md
 │   └── TGL-003.md
+│
 ├── prompts/
 │   ├── master-supervisor.md
 │   ├── policy-composition-worker.md
@@ -225,587 +132,795 @@ lapop-agent-governance/
 │   ├── temporal-governance-worker.md
 │   ├── meta-auditor.md
 │   └── multi-model-coordination-v1.md
+│
 ├── schemas/
 │   ├── execution-context.schema.yaml
-│   ├── execution-record.schema.yaml
 │   ├── dependency-note.schema.yaml
-│   ├── artifact-boundary.schema.yaml
+│   ├── execution-record.schema.yaml
 │   ├── policy-attestation.schema.yaml
 │   ├── strategy-update-patch.schema.yaml
-│   ├── collaboration-health-report.schema.yaml
-│   └── rollback-candidate.schema.yaml
+│   └── collaboration-health-report.schema.yaml
+│
 ├── examples/
 │   ├── qnvm-agent-cycle.md
 │   ├── codebase-repair-cycle.md
-│   ├── research-audit-cycle.md
 │   └── multi-model-worker-session.md
-├── research/
-│   ├── novelty-automation-prompting-v0.1.md
-│   └── design-notes.md
-└── roadmap/
-    ├── v0.1-public-spec.md
-    ├── v0.2-schema-normalization.md
-    └── v0.3-reference-runner.md
+│
+└── research/
+    ├── novelty-automation-prompting-v0.1.md
+    └── design-notes.md
 ```
 
 ---
 
-## Minimal Workflow
+## Quick Start
 
-A basic LAPOP/CDO-style multi-agent cycle looks like this:
+### 1. Choose a supervisor
+
+Use `prompts/master-supervisor.md` as the controlling prompt for the model coordinating the workflow.
+
+The supervisor is responsible for:
+
+* understanding the task,
+* assigning workers,
+* enforcing boundaries,
+* reviewing output,
+* validating evidence,
+* detecting contamination,
+* deciding merge/repair/reject,
+* and writing the execution summary.
+
+---
+
+### 2. Create an execution context
+
+Use `schemas/execution-context.schema.yaml`.
+
+The `ExecutionContext` records:
+
+* project,
+* session,
+* cycle,
+* run,
+* artifact,
+* agent role,
+* policy state,
+* strategy state,
+* temporal position,
+* contamination status,
+* and permissions.
+
+Minimal manual example:
+
+```yaml
+project_id: lapop-agent-governance
+session_id: session-001
+cycle_id: cycle-001-intake
+run_id: run-001
+artifact_id: prompt.master-supervisor
+execution_mode: manual_paste
+side_effect_class: advisory
+risk_level: low
+contamination_state:
+  contamination_free: true
+  contamination_status: clean
+  learning_eligible: false
+  trust_update_allowed: false
+  memory_write_allowed: false
+```
+
+---
+
+### 3. Assign a worker
+
+Use the worker prompts in `prompts/`.
+
+Example worker assignment:
+
+```md
+# Worker Assignment Packet
+
+## Worker Model
+
+DeepSeek
+
+## Role
+
+implementation_worker
+
+## Assigned Artifact
+
+schemas/execution-record.schema.yaml
+
+## Objective
+
+Draft the canonical Execution_Record schema.
+
+## Forbidden Actions
+
+- Do not modify unassigned artifacts.
+- Do not invent test results.
+- Do not claim file inspection unless files are provided.
+- Do not change public interfaces without dependency notes.
+
+## Required Output
+
+1. Complete artifact or patch.
+2. Validation summary.
+3. Dependency notes, or `None`.
+4. Known risks.
+```
+
+---
+
+### 4. Require worker output contracts
+
+Every worker should return:
+
+````md
+# Worker Output
+
+## Assigned Artifact
+
+<artifact>
+
+## Work Completed
+
+<summary>
+
+## Artifact / Patch
+
+<content or patch>
+
+## Validation Summary
+
+```yaml
+syntax_valid: true | false | not_applicable
+schema_valid: true | false | not_applicable
+tests_run: []
+boundary_respected: true | false
+evidence_grounded: true | false
+contamination_detected: true | false
+````
+
+## Dependency Notes
+
+<notes or None>
+
+## Known Risks / Unresolved Issues
+
+* <risk>
+
+````
+
+---
+
+### 5. Validate, audit, then merge
+
+Use:
+
+- `prompts/meta-auditor.md`,
+- `schemas/execution-record.schema.yaml`,
+- `schemas/dependency-note.schema.yaml`,
+- and `schemas/collaboration-health-report.schema.yaml`.
+
+Do not merge simply because an output looks good.
+
+Merge only if:
+
+```yaml
+validation_passed: true
+boundary_respected: true
+policy_allowed: true
+blocking_dependencies_resolved: true
+contamination_free: true
+rollback_available_for_risky_changes: true
+````
+
+---
+
+## Minimal Manual Workflow
+
+This project is manual-first.
+
+You can use it before any automation exists:
 
 ```text
-1. User submits task.
-2. Supervisor creates ExecutionContext.
-3. Policy layer compiles effective rules.
-4. Task is decomposed into artifact-bound work units.
-5. Agents receive assignments and artifact boundaries.
-6. Agents produce outputs and dependency notes.
-7. Validators check syntax, schemas, evidence, boundaries, and completeness.
-8. Auditors detect hallucination, drift, contamination, or unsupported claims.
-9. Merger combines valid outputs or preserves disagreement.
-10. Execution record is sealed.
-11. Strategy layer learns only if contamination_free = true.
-12. Temporal layer manages checkpoints, rollback, aging, and oscillation.
+1. Human states objective.
+2. GPT supervisor creates worker packet.
+3. Human pastes packet into worker model.
+4. Worker returns output contract.
+5. Human pastes worker output back to supervisor.
+6. Supervisor validates, audits, and merges or rejects.
+7. Supervisor records execution summary.
+8. Repeat.
 ```
+
+This lets one person coordinate several LLMs without letting the workflow become chaos.
 
 ---
 
 ## Core Concepts
 
-### ExecutionContext
+## ExecutionContext
 
-Shared context object passed through the stack.
+A shared context object passed across layers.
 
-```yaml
-ExecutionContext:
-  project_id: string
-  session_id: string
-  cycle_id: string
-  task_node_id: optional[UUID]
-  artifact_id: optional[string]
-  agent_class: optional[string]
-  agent_assignment_id: optional[string]
-  timestamp: timestamp
-  checkpoint_hash: optional[string]
-  policy_attestation_id: optional[UUID]
-  strategy_ledger_head: optional[string]
-```
+It binds together:
 
-### Artifact Boundary
+* task identity,
+* artifact identity,
+* agent role,
+* policy state,
+* strategy state,
+* checkpoint state,
+* temporal position,
+* contamination status,
+* and permissions.
 
-Defines what an agent may and may not do.
-
-```yaml
-Artifact_Boundary:
-  artifact_id: string
-  artifact_type: enum [file, module, schema, dataset, interface, config, diagram, report]
-  owner_agent_class: string
-  owner_assignment_id: optional[string]
-  allowed_actions:
-    - read
-    - annotate
-    - propose_change
-    - modify_content
-    - validate
-    - approve_for_merge
-  forbidden_actions:
-    - modify_unowned
-    - delete
-    - rename
-    - change_interface
-    - change_schema
-    - publish_without_validation
-```
-
-### Dependency Note
-
-Used when one agent needs another artifact changed.
-
-```yaml
-Dependency_Note:
-  note_id: UUID
-  target_agent_class: string
-  target_assignment_id: optional[string]
-  target_artifact: string
-  summary: string
-  required_change: string
-  justification: string
-  blocking: boolean
-  priority: enum [low, medium, high, blocking]
-  dependency_type: enum [schema, interface, logic, validation, performance]
-  lifecycle_state: enum [open, acknowledged, deferred, resolved, superseded, rejected]
-```
-
-### Execution Record
-
-The sealed trace of a run.
-
-```yaml
-Execution_Record:
-  execution_id: UUID
-  context: ExecutionContext
-  task_graph: list[TaskNode]
-  agent_assignments: list[AgentAssignment]
-  artifacts_produced: list[ArtifactRef]
-  validation_reports: list[ValidationReport]
-  audit_reports: list[AuditReport]
-  merge_log: optional[MergeLog]
-  dependency_notes: list[Dependency_Note]
-  checkpoints: list[Checkpoint]
-  contamination_free: boolean
-  failure_events: list[FailureEvent]
-  created_at: timestamp
-  completed_at: optional[timestamp]
-```
-
----
-
-## Layer Summaries
-
-### LAPOP-003
-
-The orchestration backbone.
-
-Responsibilities:
-
-* task typing,
-* decomposition,
-* routing,
-* execution,
-* validation,
-* audit,
-* merge,
-* repair,
-* memory writeback,
-* reproducibility,
-* side-effect control.
-
-### CDO-003
-
-The coordination discipline overlay.
-
-Responsibilities:
-
-* artifact ownership,
-* allowed and forbidden actions,
-* dependency notes,
-* boundary violations,
-* note lifecycle,
-* ownership transfer,
-* semantic integrity,
-* supervisor-mediated consolidation.
-
-### PCL-003
-
-The policy arbiter.
-
-Responsibilities:
-
-* ingest policy fragments,
-* compile deterministic precedence,
-* resolve conflicts,
-* build scoped policy maps,
-* manage exception windows,
-* produce policy attestations,
-* expose `is_action_allowed`.
-
-### SLL-003
-
-The safe strategy learner.
-
-Responsibilities:
-
-* collect clean execution outcomes,
-* quarantine contaminated runs,
-* learn routing priors,
-* mine repair patterns,
-* tune validation predictors,
-* track merge regret,
-* commit benchmark-gated strategy patches,
-* support rollback through a strategy memory ledger.
-
-### EIL-003
-
-The value-of-information layer.
-
-Responsibilities:
-
-* decide whether further computation is worth it,
-* rank next actions,
-* estimate information gain,
-* model tool trust,
-* model human review cost,
-* track economic regret,
-* stop when marginal value is too low.
-
-### CHL-003
-
-The collaboration immune system.
-
-Responsibilities:
-
-* measure boundary health,
-* track note density and cross-boundary churn,
-* maintain decaying trust graphs,
-* preserve important disagreement,
-* detect harmful coordination loops,
-* expose collaboration health reports,
-* emit intervention signals.
-
-### TGL-003
-
-The temporal control layer.
-
-Responsibilities:
-
-* age unresolved items,
-* archive stale branches,
-* reopen archived items,
-* detect deadlock,
-* detect oscillation,
-* preserve speculative branches,
-* coordinate rollback,
-* maintain governance debt reports,
-* schedule constitutional review.
-
----
-
-## Prompt Packs
-
-The repository includes prompt templates for:
-
-* master supervisor,
-* layer-specific workers,
-* meta-auditor,
-* code generation workers,
-* analysis-only workers,
-* multi-model coordination cycles.
-
-These are intended for running separate model sessions while preserving shared invariants.
-
-Example roles:
+File:
 
 ```text
-GPT Supervisor:
-  Integration, validation, synchronization, correction.
-
-Implementation Worker:
-  Owns one assigned artifact or file.
-
-Analysis Worker:
-  Produces critique, shortcomings, or recommendations only.
-
-Meta-Auditor:
-  Finds contradictions, missing schemas, contamination paths, and reproducibility failures.
+schemas/execution-context.schema.yaml
 ```
 
 ---
 
-## Multi-Model Coordination Pattern
+## Dependency Note
 
-The stack can coordinate different LLMs by assigning each model a strict role.
+A structured request for a cross-boundary change.
+
+If a worker sees something that must change outside its assigned artifact, it must emit a dependency note instead of editing the unowned artifact.
+
+File:
+
+```text
+schemas/dependency-note.schema.yaml
+```
 
 Example:
 
-```text
-DeepSeek:
-  heavy code generation or repair
+```md
+# Dependency Note
 
-GLM / Z.ai Agent:
-  file editing, tool execution, local testing
+Source Artifact:
+schemas/execution-record.schema.yaml
 
-Grok:
-  alternative critique, adversarial framing, novelty exploration
+Target Artifact:
+schemas/strategy-update-patch.schema.yaml
 
-Gemini:
-  structured worker sessions or module-specific generation
+Priority:
+high
 
-GPT Supervisor:
-  architecture, validation, merge discipline, prompt synthesis, audit
+Blocking:
+true
+
+Dependency Type:
+schema
+
+## Summary
+
+Strategy rollback fields must align with execution record fields.
+
+## Required Change
+
+Ensure both schemas use compatible `strategy_ledger_head` references.
+
+## Validation Requirement
+
+Validate that TGL rollback can restore the strategy ledger state.
 ```
-
-Each worker receives:
-
-* assigned artifact,
-* allowed actions,
-* forbidden actions,
-* output contract,
-* dependency-note rules,
-* validation requirements,
-* and rollback expectations.
 
 ---
 
-## Anti-Contamination Rules
+## Execution Record
 
-The system treats contamination as a first-class failure mode.
+A sealed trace of a governed execution.
 
-Examples of contamination:
+It records:
 
-* hallucinated evidence,
-* unsupported claims,
-* generated speculation cited as source,
-* critic output treated as authority,
-* failed repair prompt becoming canonical,
-* merged artifact overwriting original evidence,
-* unverified external artifact entering memory.
+* context,
+* task request,
+* task graph,
+* assignments,
+* artifacts,
+* validation,
+* audit,
+* dependency notes,
+* policy refs,
+* strategy refs,
+* economics,
+* collaboration refs,
+* temporal refs,
+* checkpoints,
+* side effects,
+* failures,
+* contamination,
+* reproducibility,
+* and final decision.
 
-Contaminated runs:
+File:
 
-* do not update trust graphs,
-* do not update strategy learning,
-* do not enter validated memory,
-* do not influence collaboration health scores,
-* require quarantine or supervisor review.
+```text
+schemas/execution-record.schema.yaml
+```
 
 ---
 
-## Governance Layers as Control Plane
+## Policy Attestation
 
-The project separates execution from governance.
+A proof object emitted by `PCL-003`.
+
+It records:
+
+* policy query,
+* action descriptor,
+* effective policy hash,
+* matched rules,
+* conflicts,
+* exceptions,
+* final allowance result,
+* constraints,
+* and rollback support.
+
+File:
 
 ```text
-Data Plane:
-  agent execution,
-  tool calls,
-  artifact generation,
-  validation,
-  audit,
-  merge.
-
-Control Plane:
-  policy composition,
-  routing,
-  economics,
-  strategy learning,
-  temporal governance,
-  collaboration health,
-  rollback,
-  contamination control.
+schemas/policy-attestation.schema.yaml
 ```
 
-This prevents worker agents from silently changing the rules of their own execution.
+---
+
+## Strategy Update Patch
+
+A reversible, benchmark-gated strategy update candidate.
+
+Strategy updates are not allowed directly from vibes.
+
+They require:
+
+* clean run,
+* validation,
+* audit,
+* policy check,
+* benchmark gate,
+* rollback plan,
+* and low initial confidence when sample size is small.
+
+File:
+
+```text
+schemas/strategy-update-patch.schema.yaml
+```
+
+---
+
+## Collaboration Health Report
+
+A structured report emitted by `CHL-003`.
+
+It tracks:
+
+* boundary health,
+* dependency-note health,
+* trust signals,
+* disagreement,
+* merge health,
+* contamination,
+* human review burden,
+* emergence risk,
+* and intervention recommendations.
+
+File:
+
+```text
+schemas/collaboration-health-report.schema.yaml
+```
+
+---
+
+## Contamination Model
+
+Contamination means unverified or invalid material enters a trusted channel.
+
+Examples:
+
+* a model invents a test result,
+* a critic hallucination becomes a repair requirement,
+* a stale branch is merged as current,
+* a failed validation is hidden,
+* generated text is treated as evidence,
+* a model claims it inspected files it did not inspect,
+* an unowned artifact is modified silently.
+
+Contamination blocks:
+
+```yaml
+learning_allowed: false
+trust_update_allowed: false
+memory_write_allowed: false
+validated_merge: false
+```
+
+Core rule:
+
+> Generated text is not evidence for itself.
+
+---
+
+## Strategy Learning Model
+
+SLL is intentionally conservative.
+
+A clean execution may create a candidate strategy patch.
+
+It does not automatically change global behavior.
+
+Correct flow:
+
+```text
+clean execution
+  → validated outcome
+  → candidate strategy patch
+  → policy check
+  → benchmark gate
+  → ledger commit
+  → rollback support
+```
+
+A single successful run should usually produce only a low-confidence, scoped candidate.
+
+---
+
+## Economic Intelligence Model
+
+More work is not always better.
+
+EIL ranks candidate next actions by expected net value:
+
+```text
+Expected Net Value =
+  expected quality gain
++ expected uncertainty reduction
++ expected risk reduction
++ expected rework avoidance
+- expected cost
+- expected latency
+- expected contamination risk
+- expected coordination burden
+```
+
+Possible recommendations:
+
+* stop,
+* continue,
+* retrieve more,
+* run validation,
+* run audit,
+* repair again,
+* request human review,
+* preserve disagreement,
+* rollback,
+* archive,
+* defer.
+
+Sometimes the correct answer is:
+
+```text
+Stop. Current result is good enough.
+```
+
+---
+
+## Temporal Governance Model
+
+TGL protects long-running work from time-based corruption.
+
+It tracks:
+
+* checkpoints,
+* rollback candidates,
+* stale branches,
+* stale validation,
+* expired policy exceptions,
+* oscillation,
+* deadlock,
+* governance debt,
+* policy state,
+* and strategy state.
+
+Rollback must account for:
+
+```yaml
+artifact_state: required
+policy_attestation_id: required_if_policy_sensitive
+strategy_ledger_head: required_if_strategy_sensitive
+contamination_free: required
+post_rollback_validation: required
+```
+
+---
+
+## Multi-Model Coordination
+
+The framework supports role-separated multi-model sessions.
+
+Example roles:
+
+| Model      | Suggested Role                     |
+| ---------- | ---------------------------------- |
+| GPT        | Supervisor / merger / meta-auditor |
+| DeepSeek   | Heavy implementation worker        |
+| Z.ai / GLM | Local file and tool worker         |
+| Grok       | Novelty/adversarial critic         |
+| Claude     | Coherence/design critic            |
+| Gemini     | Structured documentation worker    |
+
+Rule:
+
+> No model is the whole system.
+
+Each model is a worker inside a governed process.
+
+---
+
+## Example Workflows
+
+### QNVM Agent Cycle
+
+File:
+
+```text
+examples/qnvm-agent-cycle.md
+```
+
+Shows how to govern a simulation repair cycle where metrics reveal excessive collapse, death, resurrection, and churn.
+
+---
+
+### Codebase Repair Cycle
+
+File:
+
+```text
+examples/codebase-repair-cycle.md
+```
+
+Shows how to patch a concrete Python runtime error while preserving traceback evidence, boundary discipline, validation, audit, and optional strategy learning.
+
+---
+
+### Multi-Model Worker Session
+
+File:
+
+```text
+examples/multi-model-worker-session.md
+```
+
+Shows how one human can coordinate GPT, DeepSeek, Z.ai, Grok, Claude, Gemini, and other models without cross-contaminating outputs.
+
+---
+
+## Research Notes
+
+### Novelty Automation Prompting
+
+File:
+
+```text
+research/novelty-automation-prompting-v0.1.md
+```
+
+Explores how to generate novelty aggressively while merging it conservatively.
+
+Key rule:
+
+```text
+Novelty is fuel.
+Governance is the engine.
+Validation is the road.
+```
+
+---
+
+### Design Notes
+
+File:
+
+```text
+research/design-notes.md
+```
+
+Explains the design rationale behind the stack, the seven-layer split, contamination gates, manual-first operation, and future automation path.
+
+---
+
+## Current Status
+
+```yaml
+status: draft_framework
+version: 0.1.0
+maturity: experimental
+recommended_use:
+  - manual multi-model coordination
+  - repo planning
+  - prompt governance
+  - schema design
+  - code repair cycles
+  - audit workflows
+not_yet_ready_for:
+  - unsupervised autonomous execution
+  - high-stakes deployment
+  - automatic external writes
+  - automatic strategy updates without validation
+```
 
 ---
 
 ## Roadmap
 
-### v0.1 — Public Specification Release
+### v0.1 — Manual Governance Pack
 
-* Publish consolidated docs.
-* Establish repo structure.
-* Add README and license.
-* Include initial prompt packs.
-* Include layer specs.
+* README
+* specs
+* prompts
+* schemas
+* examples
+* research notes
+* execution-record-lite template
+* dependency-note template
 
-### v0.2 — Schema Normalization
+### v0.2 — Validation Utilities
 
-* Normalize shared schemas.
-* Remove duplicated schema definitions.
-* Define canonical `ExecutionContext`.
-* Define canonical `Execution_Record`.
-* Define canonical `Dependency_Note`.
-* Define canonical `HumanReviewOutcome`.
-* Define canonical rollback and policy attestation schemas.
-
-### v0.3 — Reference Runner
-
-* Build a minimal local runner.
-* Support task decomposition.
-* Assign artifact boundaries.
-* Validate dependency notes.
-* Emit execution records.
-* Run simple supervisor merge.
-
-### v0.4 — Policy and Temporal MVP
-
-* Implement policy query stub.
-* Implement exception windows.
-* Implement checkpointing.
-* Implement basic rollback.
-* Implement aging and archive logic.
-
-### v0.5 — Collaboration Health MVP
-
-* Boundary health metrics.
-* Note density.
-* Cross-boundary churn.
-* Simple trust graph.
-* Disagreement preservation record.
-
-### v0.6 — Strategy Learning MVP
-
-* Outcome collection.
-* Quarantine gate.
-* Strategy update patch schema.
-* Benchmark regression gate stub.
-* Reversible strategy ledger.
-
-### v0.7 — Economic Intelligence MVP
-
-* Value-of-information decision record.
-* Tool trust calibration.
-* Human review cost model.
-* Stop/probe decision logic.
-
-### v1.0 — Integrated Reference Platform
-
-* End-to-end execution cycle.
-* Multi-agent worker support.
-* Policy attestation.
-* Strategy ledger.
-* Collaboration health report.
-* Temporal rollback.
-* Reproducibility profile.
-* Benchmark examples.
-
----
-
-## Example: Dependency Note
+Planned:
 
 ```text
-DEPENDENCY NOTE FOR Strategy Learning Layer:
-The Execution_Record schema must expose contamination_free, validation_outcome,
-repair_strategy_used, merge_method, human_review_outcome, and benchmark_result
-so SLL can learn from clean runs only.
+validators/
+├── yaml_parse.py
+├── schema_validate.py
+├── execution_record_lint.py
+└── dependency_note_lint.py
 ```
 
----
+### v0.3 — Local Runner
 
-## Example: Worker Output Contract
+Planned:
 
 ```text
-=== ARTIFACT UPDATED: <artifact_id> ===
-
-<complete artifact content>
-
-=== VALIDATION SUMMARY ===
-
-- syntax_valid: true
-- schema_valid: true
-- boundary_respected: true
-- contamination_free: true
-- tests_passed: true
-
-=== DEPENDENCY NOTES ===
-
-None
+cli/
+└── lapop_runner.py
 ```
 
----
+Possible commands:
 
-## Contributing
+```bash
+lapop init
+lapop new-cycle
+lapop validate schemas/
+lapop create-execution-record
+lapop audit-cycle
+```
 
-This project welcomes:
+### v0.4 — Strategy Ledger
 
-* protocol critiques,
-* schema improvements,
-* implementation prototypes,
-* benchmark ideas,
-* examples of multi-agent coordination failures,
-* integrations with local agent tooling,
-* documentation improvements.
+Planned:
 
-Contribution guidelines will be added as the project stabilizes.
+```text
+ledger/
+├── strategy-ledger.jsonl
+├── policy-attestations.jsonl
+└── checkpoints/
+```
 
-Until then:
+### v0.5 — Review Dashboard
 
-1. Keep changes scoped.
-2. Preserve artifact boundaries.
-3. Do not remove validation logic without justification.
-4. Include rationale for any schema change.
-5. Avoid vague “agent intelligence” claims.
-6. Prefer measurable contracts, explicit state transitions, and reproducible examples.
+Possible local dashboard for:
 
----
-
-## Non-Goals
-
-This project does not claim to provide:
-
-* artificial general intelligence,
-* model consciousness,
-* automatic truth,
-* unrestricted self-modification,
-* fully autonomous production deployment,
-* or a replacement for human judgment.
-
-It is a governance and orchestration protocol stack.
-
----
-
-## Security and Safety
-
-This stack is designed to reduce risks such as:
-
-* hallucinated artifacts,
-* ungrounded claims,
-* unsafe merges,
-* runaway agent loops,
+* execution records,
+* dependency notes,
+* validation status,
+* collaboration health,
 * stale branches,
-* hidden policy conflicts,
-* poisoned learning,
-* unbounded tool use,
-* and loss of reproducibility.
+* rollback candidates,
+* strategy patches.
 
-Security review is still required before using any reference implementation in production.
+---
+
+## Safety and Governance Notes
+
+This project is intended for governed coordination.
+
+It should not be used to justify:
+
+* unsupervised external actions,
+* hidden automation,
+* unreviewed publication,
+* automatic deletion,
+* automatic credential changes,
+* high-stakes decisions without human approval,
+* or strategy learning from contaminated runs.
+
+External writes require explicit approval.
+
+Destructive actions deny by default.
+
+---
+
+## Philosophy
+
+This project is not trying to make LLMs flawless.
+
+It assumes they are flawed.
+
+The goal is to create a process where flawed models can still produce useful, auditable, reversible work.
+
+```text
+Evidence wins over confidence.
+Boundaries win over speed.
+Policy wins over economics.
+Validation wins over novelty.
+Rollback wins over irreversible cleverness.
+```
 
 ---
 
 ## License
 
-Recommended license:
+See `LICENSE`.
+
+Recommended default:
 
 ```text
-Apache-2.0
-```
-
-Apache-2.0 is preferred because this project may eventually include reference implementations, interfaces, schemas, and reusable protocol components.
-
-MIT is also acceptable if maximum simplicity is preferred.
-
----
-
-## Acknowledgment
-
-This project began as an attempt to understand, formalize, and improve the emerging workflow of multi-model LLM collaboration.
-
-It is released publicly in the spirit of open tooling, shared governance, and disciplined experimentation.
-
-The goal is simple:
-
-> Make multi-agent systems less magical, less fragile, less contaminated, and more accountable.
-
----
-
-## Short Description
-
-```text
-Production-oriented governance protocols for auditable, contamination-safe multi-agent LLM orchestration.
+MIT License
 ```
 
 ---
 
-## Keywords
+## Changelog
 
-```text
-multi-agent
-LLM
-agent orchestration
-prompt orchestration
-governance
-artifact boundaries
-dependency notes
-anti-contamination
-strategy learning
-policy composition
-value of information
-collaboration health
-temporal governance
-rollback
-AI agents
-LLM agents
+See `CHANGELOG.md`.
+
+---
+
+## Contributing
+
+This project is early.
+
+Useful contributions include:
+
+* schema validation fixes,
+* example execution records,
+* repair-cycle examples,
+* prompt improvements,
+* failure-mode reports,
+* CLI validation scripts,
+* documentation cleanup,
+* benchmark-gate designs,
+* and meta-audit reports.
+
+When contributing, preserve the core invariants:
+
+```yaml
+core_invariants:
+  - generated_text_is_not_evidence_for_itself
+  - unowned_changes_require_dependency_notes
+  - contaminated_runs_cannot_update_strategy
+  - contaminated_runs_cannot_update_trust
+  - policy_denial_cannot_be_overridden_by_economics
+  - rollback_requires_policy_and_strategy_state_when_relevant
+  - external_writes_require_explicit_approval
+  - destructive_actions_deny_by_default
 ```
 
+---
 
+## Final Line
+
+```text
+Do not trust the model.
+Trust the governed process.
+```
+
+```
+```
