@@ -1,0 +1,806 @@
+# schemas/policy-attestation.schema.yaml
+#
+# Canonical shared PolicyAttestationRecord schema for lapop-agent-governance.
+#
+# Purpose:
+#   PolicyAttestationRecord is the sealed proof of the effective policy state
+#   used for a governed execution context or action. It binds policy fragments,
+#   matched rules, conflicts, exceptions, compiler version, precedence version,
+#   and final allowance result into a reproducible audit object.
+#
+# Status:
+#   v0.2 schema-normalization candidate
+
+schema_id: policy-attestation
+schema_version: "0.2.0"
+schema_kind: canonical_shared_schema
+schema_owner: PCL-003
+schema_status: draft
+
+title: PolicyAttestationRecord
+description: >
+  Canonical policy attestation object for the LAPOP governance stack.
+  Policy attestations are emitted by PCL-003 and consumed by LAPOP, CDO,
+  SLL, EIL, CHL, and TGL for reproducibility, rollback, audit, policy
+  conflict tracing, exception validation, and runtime allowance decisions.
+
+type: object
+additionalProperties: false
+
+required:
+  - attestation_id
+  - context_ref
+  - policy_query
+  - effective_policy
+  - allowance_result
+  - conflicts
+  - exceptions
+  - reproducibility
+  - created_at
+
+properties:
+  attestation_id:
+    type: string
+    format: uuid
+    description: >
+      Stable UUID for this policy attestation.
+
+  parent_attestation_id:
+    type:
+      - string
+      - "null"
+    format: uuid
+    description: >
+      Optional parent attestation if this attestation revises, narrows,
+      replays, restores, or supersedes an earlier policy state.
+
+  context_ref:
+    type: object
+    additionalProperties: false
+    required:
+      - project_id
+      - session_id
+      - cycle_id
+      - run_id
+    properties:
+      project_id:
+        type: string
+        minLength: 1
+      repository_id:
+        type:
+          - string
+          - "null"
+      session_id:
+        type: string
+        minLength: 1
+      cycle_id:
+        type: string
+        minLength: 1
+      run_id:
+        type: string
+        minLength: 1
+      execution_id:
+        type:
+          - string
+          - "null"
+        format: uuid
+      task_node_id:
+        type:
+          - string
+          - "null"
+        format: uuid
+      artifact_id:
+        type:
+          - string
+          - "null"
+      agent_class:
+        type:
+          - string
+          - "null"
+      branch_id:
+        type:
+          - string
+          - "null"
+
+  policy_query:
+    type: object
+    additionalProperties: false
+    required:
+      - query_id
+      - action
+      - requested_by
+      - created_at
+    properties:
+      query_id:
+        type: string
+        format: uuid
+      requested_by:
+        type: string
+        minLength: 1
+      action:
+        $ref: "#/$defs/ActionDescriptor"
+      query_reason:
+        type:
+          - string
+          - "null"
+        description: >
+          Human-readable reason the policy query was requested.
+      created_at:
+        type: string
+        format: date-time
+
+  effective_policy:
+    type: object
+    additionalProperties: false
+    required:
+      - effective_policy_id
+      - effective_policy_hash
+      - policy_fragment_ids
+      - matched_rule_ids
+      - active_rule_ids
+      - precedence_order
+      - policy_sources_present
+    properties:
+      effective_policy_id:
+        type: string
+        format: uuid
+      effective_policy_hash:
+        type: string
+        minLength: 1
+        description: >
+          Canonical hash of effective policy state, including active policy
+          fragments, active rules, active exceptions, precedence version,
+          compiler version, and context hash.
+      context_hash:
+        type:
+          - string
+          - "null"
+      policy_fragment_ids:
+        type: array
+        items:
+          type: string
+        default: []
+      policy_fragment_hashes:
+        type: array
+        items:
+          type: string
+        default: []
+      matched_rule_ids:
+        type: array
+        items:
+          type: string
+        default: []
+      active_rule_ids:
+        type: array
+        items:
+          type: string
+        default: []
+      policy_sources_present:
+        type: array
+        items:
+          type: string
+          enum:
+            - system_policy
+            - organization_policy
+            - project_policy
+            - domain_policy
+            - repository_policy
+            - artifact_boundary_policy
+            - coordination_policy
+            - tool_policy
+            - safety_policy
+            - human_override
+            - temporary_exception
+            - emergency_lockdown
+            - other
+        default: []
+      precedence_order:
+        type: array
+        items:
+          type: string
+        default:
+          - system_policy
+          - emergency_lockdown
+          - safety_policy
+          - organization_policy
+          - domain_policy
+          - project_policy
+          - repository_policy
+          - artifact_boundary_policy
+          - coordination_policy
+          - tool_policy
+          - human_override
+          - temporary_exception
+      policy_scope_summary:
+        type:
+          - string
+          - "null"
+
+  allowance_result:
+    type: object
+    additionalProperties: false
+    required:
+      - decision
+      - allowed
+      - reason
+      - constraints
+      - exception_required
+      - human_approval_required
+      - dependency_note_required
+      - created_at
+    properties:
+      decision:
+        type: string
+        enum:
+          - allow
+          - allow_with_constraints
+          - deny
+          - require_review
+          - require_dependency_note
+          - require_policy_exception
+          - require_human_approval
+          - block_due_to_conflict
+          - block_due_to_missing_context
+      allowed:
+        type: boolean
+      reason:
+        type: string
+        minLength: 1
+      constraints:
+        type: array
+        items:
+          $ref: "#/$defs/PolicyConstraint"
+        default: []
+      denied_by:
+        type:
+          - string
+          - "null"
+        description: >
+          Rule ID, policy fragment ID, or policy source that denied the action.
+      matched_rules:
+        type: array
+        items:
+          type: string
+        default: []
+      conflict_proof_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      exception_required:
+        type: boolean
+      human_approval_required:
+        type: boolean
+      dependency_note_required:
+        type: boolean
+      review_required:
+        type: boolean
+        default: false
+      created_at:
+        type: string
+        format: date-time
+
+  conflicts:
+    type: array
+    description: >
+      Policy conflicts detected during composition.
+    items:
+      $ref: "#/$defs/PolicyConflict"
+    default: []
+
+  exceptions:
+    type: object
+    additionalProperties: false
+    required:
+      - active_exception_ids
+      - exception_used
+      - expired_exception_ids
+      - exception_required
+    properties:
+      active_exception_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      exception_used:
+        type: boolean
+      expired_exception_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      exception_required:
+        type: boolean
+      exception_reason:
+        type:
+          - string
+          - "null"
+      exception_constraints:
+        type: array
+        items:
+          $ref: "#/$defs/PolicyConstraint"
+        default: []
+
+  approvals:
+    type: object
+    additionalProperties: false
+    required:
+      - human_approval_present
+      - supervisor_approval_present
+      - approval_refs
+    properties:
+      human_approval_present:
+        type: boolean
+      supervisor_approval_present:
+        type: boolean
+      approval_refs:
+        type: array
+        items:
+          type: string
+        default: []
+      approval_summary:
+        type:
+          - string
+          - "null"
+
+  rollback_support:
+    type: object
+    additionalProperties: false
+    required:
+      - restorable
+      - restore_interface
+      - restore_key
+    properties:
+      restorable:
+        type: boolean
+        description: >
+          Whether this policy state can be restored by TGL during rollback.
+      restore_interface:
+        type: string
+        enum:
+          - restore_policy_state
+      restore_key:
+        type:
+          - string
+          - "null"
+        description: >
+          Usually the attestation_id.
+      rollback_notes:
+        type:
+          - string
+          - "null"
+
+  reproducibility:
+    type: object
+    additionalProperties: false
+    required:
+      - compiler_version
+      - precedence_version
+      - deterministic
+      - policy_registry_version
+    properties:
+      compiler_version:
+        type: string
+        minLength: 1
+        examples:
+          - PCL-003
+      precedence_version:
+        type: string
+        minLength: 1
+        examples:
+          - precedence-v0.2.0
+      policy_registry_version:
+        type: string
+        minLength: 1
+        examples:
+          - policy-registry-v0.2.0
+      deterministic:
+        type: boolean
+      hash_algorithm:
+        type:
+          - string
+          - "null"
+        examples:
+          - sha256
+      canonicalization_method:
+        type:
+          - string
+          - "null"
+        examples:
+          - json-canonical-v1
+      replay_notes:
+        type:
+          - string
+          - "null"
+
+  audit:
+    type: object
+    additionalProperties: false
+    required:
+      - audit_required
+      - audit_status
+      - audit_notes
+    properties:
+      audit_required:
+        type: boolean
+      audit_status:
+        type: string
+        enum:
+          - not_required
+          - pending
+          - passed
+          - failed
+          - unknown
+      audit_notes:
+        type:
+          - string
+          - "null"
+
+  lifecycle:
+    type: object
+    additionalProperties: false
+    required:
+      - state
+      - supersedes
+      - superseded_by
+      - expires_at
+    properties:
+      state:
+        type: string
+        enum:
+          - active
+          - superseded
+          - expired
+          - revoked
+          - restored
+          - archived
+      supersedes:
+        type:
+          - string
+          - "null"
+        format: uuid
+      superseded_by:
+        type:
+          - string
+          - "null"
+        format: uuid
+      expires_at:
+        type:
+          - string
+          - "null"
+        format: date-time
+      revoked_at:
+        type:
+          - string
+          - "null"
+        format: date-time
+      revoke_reason:
+        type:
+          - string
+          - "null"
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type:
+      - string
+      - "null"
+    format: date-time
+
+  tags:
+    type: array
+    items:
+      type: string
+    default: []
+
+$defs:
+  ActionDescriptor:
+    type: object
+    additionalProperties: false
+    required:
+      - action_type
+      - side_effect_class
+    properties:
+      action_type:
+        type: string
+        enum:
+          - start_execution
+          - read_artifact
+          - modify_artifact
+          - create_artifact
+          - delete_artifact
+          - rename_artifact
+          - change_schema
+          - change_interface
+          - run_tool
+          - write_memory
+          - update_strategy
+          - publish_external
+          - send_message
+          - create_checkpoint
+          - rollback
+          - archive_branch
+          - revive_branch
+          - freeze_artifact
+          - request_human_review
+          - apply_policy_exception
+          - restore_policy_state
+          - restore_strategy_state
+          - other
+      target_artifact:
+        type:
+          - string
+          - "null"
+      target_tool:
+        type:
+          - string
+          - "null"
+      target_external_system:
+        type:
+          - string
+          - "null"
+      side_effect_class:
+        type: string
+        enum:
+          - read_only
+          - simulated
+          - advisory
+          - write_internal
+          - write_external
+          - destructive
+      agent_class:
+        type:
+          - string
+          - "null"
+      agent_role:
+        type:
+          - string
+          - "null"
+      risk_level:
+        type:
+          - string
+          - "null"
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+          - unknown
+          - null
+      metadata:
+        type: object
+        additionalProperties: true
+        default: {}
+
+  PolicyConstraint:
+    type: object
+    additionalProperties: false
+    required:
+      - constraint_id
+      - constraint_type
+      - description
+      - blocking
+    properties:
+      constraint_id:
+        type: string
+      constraint_type:
+        type: string
+        enum:
+          - require_validation
+          - require_audit
+          - require_human_review
+          - require_supervisor_review
+          - require_dependency_note
+          - require_checkpoint
+          - require_sandbox
+          - prohibit_external_write
+          - prohibit_destructive_action
+          - limit_tool_scope
+          - limit_artifact_scope
+          - require_redaction
+          - require_citation
+          - require_reproducibility_profile
+          - require_contamination_free
+          - require_benchmark_gate
+          - require_rollback_plan
+          - other
+      description:
+        type: string
+      blocking:
+        type: boolean
+
+  PolicyConflict:
+    type: object
+    additionalProperties: false
+    required:
+      - conflict_id
+      - conflict_type
+      - conflicting_rules
+      - severity
+      - resolved
+      - created_at
+    properties:
+      conflict_id:
+        type: string
+        format: uuid
+      conflict_type:
+        type: string
+        enum:
+          - allow_vs_deny
+          - incompatible_constraints
+          - precedence_ambiguous
+          - exception_scope_overlap
+          - missing_authority
+          - expired_exception
+          - missing_context
+          - other
+      conflicting_rules:
+        type: array
+        items:
+          type: string
+        default: []
+      severity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+      resolved:
+        type: boolean
+      resolution:
+        type:
+          - object
+          - "null"
+        additionalProperties: false
+        required:
+          - method
+          - rationale
+          - resolved_by
+        properties:
+          method:
+            type: string
+            enum:
+              - precedence
+              - stricter_rule_wins
+              - deny_by_default
+              - human_review
+              - supervisor_review
+              - exception_window
+              - unresolved_block
+          winning_rule_id:
+            type:
+              - string
+              - "null"
+          rationale:
+            type: string
+          resolved_by:
+            type: string
+      created_at:
+        type: string
+        format: date-time
+
+examples:
+  - attestation_id: "44444444-4444-4444-8444-444444444444"
+    parent_attestation_id: null
+    context_ref:
+      project_id: lapop-agent-governance
+      repository_id: GhostMeshIO/lapop-agent-governance
+      session_id: session-2026-04-27-a
+      cycle_id: cycle-004-policy-attestation-schema
+      run_id: run-0001
+      execution_id: null
+      task_node_id: null
+      artifact_id: schema.policy-attestation
+      agent_class: policy_composition_worker
+      branch_id: main
+    policy_query:
+      query_id: "55555555-5555-4555-8555-555555555555"
+      requested_by: supervisor
+      action:
+        action_type: modify_artifact
+        target_artifact: schemas/policy-attestation.schema.yaml
+        target_tool: null
+        target_external_system: null
+        side_effect_class: advisory
+        agent_class: supervisor
+        agent_role: supervisor
+        risk_level: low
+        metadata: {}
+      query_reason: "Check whether creating schema artifact is allowed in manual advisory workflow."
+      created_at: "2026-04-27T00:00:00Z"
+    effective_policy:
+      effective_policy_id: "66666666-6666-4666-8666-666666666666"
+      effective_policy_hash: "placeholder-effective-policy-hash"
+      context_hash: "placeholder-context-hash"
+      policy_fragment_ids:
+        - project-default
+        - cdo-boundary-default
+      policy_fragment_hashes: []
+      matched_rule_ids:
+        - allow-advisory-schema-draft
+      active_rule_ids:
+        - allow-advisory-schema-draft
+      policy_sources_present:
+        - project_policy
+        - artifact_boundary_policy
+      precedence_order:
+        - system_policy
+        - emergency_lockdown
+        - safety_policy
+        - organization_policy
+        - domain_policy
+        - project_policy
+        - repository_policy
+        - artifact_boundary_policy
+        - coordination_policy
+        - tool_policy
+        - human_override
+        - temporary_exception
+      policy_scope_summary: "Manual advisory schema draft."
+    allowance_result:
+      decision: allow_with_constraints
+      allowed: true
+      reason: "Advisory schema draft is allowed with validation before merge."
+      constraints:
+        - constraint_id: require-schema-validation
+          constraint_type: require_validation
+          description: "Validate YAML and schema structure before merge."
+          blocking: true
+      denied_by: null
+      matched_rules:
+        - allow-advisory-schema-draft
+      conflict_proof_ids: []
+      exception_required: false
+      human_approval_required: false
+      dependency_note_required: false
+      review_required: false
+      created_at: "2026-04-27T00:00:00Z"
+    conflicts: []
+    exceptions:
+      active_exception_ids: []
+      exception_used: false
+      expired_exception_ids: []
+      exception_required: false
+      exception_reason: null
+      exception_constraints: []
+    approvals:
+      human_approval_present: false
+      supervisor_approval_present: true
+      approval_refs: []
+      approval_summary: "Supervisor created draft for user review."
+    rollback_support:
+      restorable: true
+      restore_interface: restore_policy_state
+      restore_key: "44444444-4444-4444-8444-444444444444"
+      rollback_notes: "Manual draft can be superseded by later policy attestation."
+    reproducibility:
+      compiler_version: PCL-003
+      precedence_version: precedence-v0.2.0
+      policy_registry_version: policy-registry-v0.2.0
+      deterministic: true
+      hash_algorithm: sha256
+      canonicalization_method: json-canonical-v1
+      replay_notes: "Placeholder hashes used in manual workflow."
+    audit:
+      audit_required: false
+      audit_status: not_required
+      audit_notes: null
+    lifecycle:
+      state: active
+      supersedes: null
+      superseded_by: null
+      expires_at: null
+      revoked_at: null
+      revoke_reason: null
+    created_at: "2026-04-27T00:00:00Z"
+    updated_at: null
+    tags:
+      - policy
+      - attestation
+      - canonical
