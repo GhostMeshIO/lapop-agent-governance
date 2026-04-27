@@ -1,0 +1,1275 @@
+# schemas/execution-record.schema.yaml
+#
+# Canonical shared Execution_Record schema for lapop-agent-governance.
+#
+# Purpose:
+#   Execution_Record is the sealed trace of a governed multi-agent execution.
+#   It binds context, task request, task graph, assignments, artifacts,
+#   validation, audit, dependency notes, policy, strategy, economics,
+#   collaboration health, temporal state, checkpoints, failures, side effects,
+#   and contamination status into one replay/audit object.
+#
+# Status:
+#   v0.2 schema-normalization candidate
+
+schema_id: execution-record
+schema_version: "0.2.0"
+schema_kind: canonical_shared_schema
+schema_owner: LAPOP-003
+schema_status: draft
+
+title: Execution_Record
+description: >
+  Canonical sealed execution trace for governed multi-agent LLM orchestration.
+  Execution_Record is consumed by LAPOP, CDO, PCL, SLL, EIL, CHL, and TGL.
+  It is the primary source for validation, audit, rollback, learning eligibility,
+  collaboration health, temporal governance, and reproducibility.
+
+type: object
+additionalProperties: false
+
+required:
+  - execution_id
+  - context
+  - task_request
+  - execution_state
+  - task_graph
+  - agent_assignments
+  - artifacts
+  - validation_reports
+  - audit_reports
+  - dependency_notes
+  - checkpoints
+  - policy_refs
+  - strategy_refs
+  - contamination
+  - reproducibility_profile
+  - created_at
+  - updated_at
+
+properties:
+  execution_id:
+    type: string
+    format: uuid
+    description: >
+      Stable UUID for this execution record.
+
+  parent_execution_id:
+    type:
+      - string
+      - "null"
+    format: uuid
+    description: >
+      Optional parent execution ID if this record continues, repairs, branches,
+      replays, or rolls back another execution.
+
+  context:
+    type: object
+    description: >
+      Embedded ExecutionContext object or schema-compatible context.
+    additionalProperties: true
+
+  task_request:
+    type: object
+    additionalProperties: false
+    required:
+      - request_id
+      - user_prompt_summary
+      - submitted_at
+      - requested_outputs
+      - constraints
+    properties:
+      request_id:
+        type: string
+        format: uuid
+      user_prompt_summary:
+        type: string
+        minLength: 1
+        description: >
+          Summary of the user request. Avoid storing sensitive content unless required.
+      raw_user_prompt_ref:
+        type:
+          - string
+          - "null"
+        description: >
+          Optional reference to the raw prompt, if stored elsewhere.
+      submitted_at:
+        type: string
+        format: date-time
+      requested_outputs:
+        type: array
+        items:
+          type: string
+        default: []
+      constraints:
+        type: array
+        items:
+          type: string
+        default: []
+      attachments:
+        type: array
+        items:
+          type: string
+        default: []
+      risk_notes:
+        type: array
+        items:
+          type: string
+        default: []
+
+  execution_state:
+    type: string
+    enum:
+      - created
+      - typed
+      - policy_checked
+      - retrieved
+      - decomposed
+      - routed
+      - assigned
+      - planned
+      - approved
+      - executing
+      - validating
+      - auditing
+      - merging
+      - repaired
+      - completed
+      - partial
+      - failed
+      - escalated
+      - cancelled
+      - quarantined
+    description: >
+      Final or current state of the execution.
+
+  task_graph:
+    type: array
+    description: >
+      Task nodes created by decomposition.
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - task_node_id
+        - title
+        - description
+        - task_type
+        - status
+        - dependencies
+        - validation_requirements
+      properties:
+        task_node_id:
+          type: string
+          format: uuid
+        parent_task_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        task_type:
+          type: string
+          enum:
+            - analysis
+            - code_generation
+            - code_repair
+            - schema_design
+            - documentation
+            - research
+            - validation
+            - audit
+            - merge
+            - planning
+            - data_operation
+            - policy_review
+            - strategy_learning
+            - economic_decision
+            - collaboration_health
+            - temporal_governance
+            - other
+        artifact_target:
+          type:
+            - string
+            - "null"
+        required_agent_class:
+          type:
+            - string
+            - "null"
+        dependencies:
+          type: array
+          items:
+            type: string
+            format: uuid
+          default: []
+        status:
+          type: string
+        side_effect_class:
+          type:
+            - string
+            - "null"
+          enum:
+            - read_only
+            - simulated
+            - advisory
+            - write_internal
+            - write_external
+            - destructive
+            - null
+        validation_requirements:
+          type: array
+          items:
+            type: string
+          default: []
+
+  agent_assignments:
+    type: array
+    description: >
+      Agent assignments used in this execution.
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - assignment_id
+        - task_node_id
+        - agent_class
+        - agent_role
+        - status
+      properties:
+        assignment_id:
+          type: string
+          format: uuid
+        task_node_id:
+          type: string
+          format: uuid
+        agent_class:
+          type: string
+        agent_role:
+          type: string
+          enum:
+            - planner
+            - worker
+            - critic
+            - auditor
+            - merger
+            - supervisor
+            - human_reviewer
+            - policy_worker
+            - strategy_worker
+            - economic_worker
+            - collaboration_worker
+            - temporal_worker
+        artifact_boundary_id:
+          type:
+            - string
+            - "null"
+        permission_profile:
+          type:
+            - string
+            - "null"
+        prompt_template_id:
+          type:
+            - string
+            - "null"
+        assigned_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        status:
+          type: string
+          enum:
+            - pending
+            - active
+            - completed
+            - failed
+            - cancelled
+
+  artifacts:
+    type: object
+    additionalProperties: false
+    required:
+      - inputs
+      - produced
+      - modified
+      - accepted
+      - rejected
+    properties:
+      inputs:
+        type: array
+        items:
+          $ref: "#/$defs/ArtifactRef"
+        default: []
+      produced:
+        type: array
+        items:
+          $ref: "#/$defs/ArtifactRef"
+        default: []
+      modified:
+        type: array
+        items:
+          $ref: "#/$defs/ArtifactRef"
+        default: []
+      accepted:
+        type: array
+        items:
+          $ref: "#/$defs/ArtifactRef"
+        default: []
+      rejected:
+        type: array
+        items:
+          $ref: "#/$defs/ArtifactRef"
+        default: []
+
+  validation_reports:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - report_id
+        - artifact_id
+        - syntax_valid
+        - schema_valid
+        - boundary_respected
+        - evidence_grounded
+        - contamination_detected
+        - validation_errors
+        - created_at
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        artifact_id:
+          type: string
+        task_node_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        syntax_valid:
+          type:
+            - boolean
+            - "null"
+        schema_valid:
+          type:
+            - boolean
+            - "null"
+        boundary_respected:
+          type: boolean
+        tests_passed:
+          type:
+            - boolean
+            - "null"
+        evidence_grounded:
+          type: boolean
+        completeness_score:
+          type:
+            - number
+            - "null"
+          minimum: 0
+          maximum: 1
+        semantic_integrity_score:
+          type:
+            - number
+            - "null"
+          minimum: 0
+          maximum: 1
+        contamination_detected:
+          type: boolean
+        validation_errors:
+          type: array
+          items:
+            $ref: "#/$defs/ValidationError"
+          default: []
+        created_at:
+          type: string
+          format: date-time
+
+  audit_reports:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - audit_id
+        - audit_type
+        - findings
+        - confidence
+        - contamination_detected
+        - recommended_action
+        - created_at
+      properties:
+        audit_id:
+          type: string
+          format: uuid
+        artifact_id:
+          type:
+            - string
+            - "null"
+        task_node_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        audit_type:
+          type: string
+          enum:
+            - hallucination_audit
+            - evidence_audit
+            - security_audit
+            - policy_audit
+            - semantic_integrity_audit
+            - contamination_audit
+            - merge_audit
+            - boundary_audit
+            - temporal_audit
+            - strategy_audit
+            - economic_audit
+            - collaboration_audit
+            - meta_audit
+        findings:
+          type: array
+          items:
+            $ref: "#/$defs/AuditFinding"
+          default: []
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        contamination_detected:
+          type: boolean
+        recommended_action:
+          type: string
+          enum:
+            - accept
+            - accept_with_conditions
+            - repair
+            - reject
+            - escalate
+            - quarantine
+            - preserve_disagreement
+        created_at:
+          type: string
+          format: date-time
+
+  dependency_notes:
+    type: array
+    description: >
+      Dependency notes created or referenced by this execution.
+    items:
+      type: object
+      additionalProperties: true
+      description: >
+        Schema-compatible Dependency_Note object.
+
+  merge_log:
+    type:
+      - object
+      - "null"
+    additionalProperties: false
+    required:
+      - merge_id
+      - artifacts_considered
+      - artifacts_accepted
+      - artifacts_rejected
+      - merge_method
+      - conflict_resolution_notes
+      - created_at
+    properties:
+      merge_id:
+        type: string
+        format: uuid
+      task_node_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      artifacts_considered:
+        type: array
+        items:
+          $ref: "#/$defs/ArtifactRef"
+        default: []
+      artifacts_accepted:
+        type: array
+        items:
+          $ref: "#/$defs/ArtifactRef"
+        default: []
+      artifacts_rejected:
+        type: array
+        items:
+          $ref: "#/$defs/ArtifactRef"
+        default: []
+      disagreement_records:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      merge_method:
+        type: string
+        enum:
+          - direct_accept
+          - supervisor_merge
+          - confidence_weighted
+          - evidence_weighted
+          - human_reviewed
+          - preserved_disagreement
+          - rejected
+      conflict_resolution_notes:
+        type: array
+        items:
+          type: string
+        default: []
+      merged_by:
+        type:
+          - string
+          - "null"
+      created_at:
+        type: string
+        format: date-time
+
+  policy_refs:
+    type: object
+    additionalProperties: false
+    required:
+      - policy_checked
+      - allowance_result_ids
+      - policy_attestation_ids
+      - unresolved_policy_conflicts
+    properties:
+      policy_checked:
+        type: boolean
+      allowance_result_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      policy_attestation_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      effective_policy_hashes:
+        type: array
+        items:
+          type: string
+        default: []
+      unresolved_policy_conflicts:
+        type: array
+        items:
+          type: string
+        default: []
+
+  strategy_refs:
+    type: object
+    additionalProperties: false
+    required:
+      - strategy_ledger_head
+      - strategy_updates_proposed
+      - strategy_updates_applied
+      - learning_eligible
+    properties:
+      strategy_ledger_head:
+        type:
+          - string
+          - "null"
+      strategy_updates_proposed:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      strategy_updates_applied:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      benchmark_gate_result_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      learning_eligible:
+        type: boolean
+
+  economic_refs:
+    type: object
+    additionalProperties: false
+    required:
+      - voi_decision_ids
+      - economic_regret_ids
+    properties:
+      voi_decision_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      economic_regret_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+
+  collaboration_refs:
+    type: object
+    additionalProperties: false
+    required:
+      - collaboration_health_report_ids
+      - disagreement_record_ids
+      - trust_update_event_ids
+    properties:
+      collaboration_health_report_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      disagreement_record_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      trust_update_event_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+
+  temporal_refs:
+    type: object
+    additionalProperties: false
+    required:
+      - temporal_status_report_ids
+      - rollback_candidate_ids
+      - rollback_execution_ids
+      - stale_branch_ids
+      - oscillation_record_ids
+      - deadlock_record_ids
+    properties:
+      temporal_status_report_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      rollback_candidate_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      rollback_execution_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      stale_branch_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      oscillation_record_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      deadlock_record_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+
+  checkpoints:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - checkpoint_id
+        - cycle_id
+        - execution_state
+        - artifact_hashes
+        - policy_attestation_id
+        - strategy_ledger_head
+        - contamination_free
+        - replay_eligible
+        - created_at
+      properties:
+        checkpoint_id:
+          type: string
+          format: uuid
+        cycle_id:
+          type: string
+        execution_state:
+          type: string
+        artifact_hashes:
+          type: object
+          additionalProperties:
+            type: string
+        dependency_note_hash:
+          type:
+            - string
+            - "null"
+        validation_hash:
+          type:
+            - string
+            - "null"
+        audit_hash:
+          type:
+            - string
+            - "null"
+        tool_output_hash:
+          type:
+            - string
+            - "null"
+        policy_attestation_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        strategy_ledger_head:
+          type:
+            - string
+            - "null"
+        contamination_free:
+          type: boolean
+        replay_eligible:
+          type: boolean
+        cacheable:
+          type: boolean
+          default: false
+        invalidation_triggers:
+          type: array
+          items:
+            type: string
+          default: []
+        created_at:
+          type: string
+          format: date-time
+
+  side_effects:
+    type: array
+    default: []
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - side_effect_id
+        - side_effect_class
+        - target
+        - action
+        - result
+        - created_at
+      properties:
+        side_effect_id:
+          type: string
+          format: uuid
+        task_node_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        side_effect_class:
+          type: string
+          enum:
+            - read_only
+            - simulated
+            - advisory
+            - write_internal
+            - write_external
+            - destructive
+        target:
+          type: string
+        action:
+          type: string
+        approved_by:
+          type:
+            - string
+            - "null"
+        result:
+          type: string
+          enum:
+            - simulated
+            - completed
+            - denied
+            - failed
+            - cancelled
+        created_at:
+          type: string
+          format: date-time
+
+  failure_events:
+    type: array
+    default: []
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - failure_id
+        - failure_type
+        - severity
+        - description
+        - recoverable
+        - repair_attempted
+        - created_at
+      properties:
+        failure_id:
+          type: string
+          format: uuid
+        task_node_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        artifact_id:
+          type:
+            - string
+            - "null"
+        failure_type:
+          type: string
+          enum:
+            - timeout
+            - schema_mismatch
+            - tool_error
+            - budget_exceeded
+            - ambiguity_unresolved
+            - dependency_failure
+            - policy_denied
+            - boundary_violation
+            - validation_failed
+            - audit_failed
+            - contamination_detected
+            - merge_failed
+            - human_escalation_required
+            - rollback_failed
+            - oscillation_detected
+            - deadlock_detected
+        severity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+        description:
+          type: string
+        recoverable:
+          type: boolean
+        repair_attempted:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+  contamination:
+    type: object
+    additionalProperties: false
+    required:
+      - contamination_free
+      - contamination_status
+      - contamination_sources
+      - learning_allowed
+      - trust_update_allowed
+      - memory_write_allowed
+      - quarantine_required
+    properties:
+      contamination_free:
+        type: boolean
+      contamination_status:
+        type: string
+        enum:
+          - unknown
+          - clean
+          - suspected
+          - contaminated
+          - quarantined
+      contamination_sources:
+        type: array
+        items:
+          type: string
+          enum:
+            - hallucinated_evidence
+            - unsupported_claim
+            - critic_hallucination
+            - fabricated_test_result
+            - boundary_violation
+            - policy_denied_action
+            - stale_branch
+            - unverified_artifact
+            - failed_repair
+            - missing_provenance
+            - other
+        default: []
+      learning_allowed:
+        type: boolean
+      trust_update_allowed:
+        type: boolean
+      memory_write_allowed:
+        type: boolean
+      quarantine_required:
+        type: boolean
+      contamination_notes:
+        type:
+          - string
+          - "null"
+
+  reproducibility_profile:
+    type: object
+    additionalProperties: false
+    required:
+      - deterministic_mode
+      - replay_eligible
+      - tool_versions
+    properties:
+      model_id:
+        type:
+          - string
+          - "null"
+      model_version:
+        type:
+          - string
+          - "null"
+      prompt_template_version:
+        type:
+          - string
+          - "null"
+      retrieval_snapshot_id:
+        type:
+          - string
+          - "null"
+      temperature:
+        type:
+          - number
+          - "null"
+        minimum: 0
+      top_p:
+        type:
+          - number
+          - "null"
+        minimum: 0
+        maximum: 1
+      deterministic_mode:
+        type: boolean
+      seed:
+        type:
+          - integer
+          - "null"
+      tool_versions:
+        type: object
+        additionalProperties:
+          type: string
+        default: {}
+      environment_hash:
+        type:
+          - string
+          - "null"
+      replay_eligible:
+        type: boolean
+      replay_notes:
+        type:
+          - string
+          - "null"
+
+  final_decision:
+    type:
+      - object
+      - "null"
+    additionalProperties: false
+    required:
+      - decision
+      - rationale
+      - decided_by
+      - decided_at
+    properties:
+      decision:
+        type: string
+        enum:
+          - accept
+          - accept_with_conditions
+          - repair_required
+          - reject
+          - quarantine
+          - escalate
+          - preserve_disagreement
+          - cancelled
+      rationale:
+        type: string
+      decided_by:
+        type: string
+      decided_at:
+        type: string
+        format: date-time
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type: string
+    format: date-time
+
+  completed_at:
+    type:
+      - string
+      - "null"
+    format: date-time
+
+  tags:
+    type: array
+    items:
+      type: string
+    default: []
+
+$defs:
+  ArtifactRef:
+    type: object
+    additionalProperties: false
+    required:
+      - artifact_id
+      - artifact_type
+    properties:
+      artifact_id:
+        type: string
+      artifact_type:
+        type: string
+        enum:
+          - file
+          - module
+          - schema
+          - dataset
+          - interface
+          - config
+          - diagram
+          - report
+          - patch
+          - prompt
+          - benchmark
+          - execution_record
+          - other
+      path:
+        type:
+          - string
+          - "null"
+      version_id:
+        type:
+          - string
+          - "null"
+      hash:
+        type:
+          - string
+          - "null"
+      created_by:
+        type:
+          - string
+          - "null"
+      created_at:
+        type:
+          - string
+          - "null"
+        format: date-time
+
+  ValidationError:
+    type: object
+    additionalProperties: false
+    required:
+      - error_id
+      - error_type
+      - severity
+      - description
+    properties:
+      error_id:
+        type: string
+        format: uuid
+      error_type:
+        type: string
+        enum:
+          - syntax_error
+          - schema_error
+          - boundary_violation
+          - unsupported_claim
+          - missing_section
+          - failed_test
+          - interface_break
+          - architectural_drift
+          - contamination
+          - unsafe_side_effect
+          - missing_provenance
+          - stale_evidence
+      severity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - blocking
+      description:
+        type: string
+      evidence:
+        type:
+          - string
+          - "null"
+      repair_hint:
+        type:
+          - string
+          - "null"
+
+  AuditFinding:
+    type: object
+    additionalProperties: false
+    required:
+      - finding_id
+      - severity
+      - title
+      - description
+    properties:
+      finding_id:
+        type: string
+        format: uuid
+      severity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+      title:
+        type: string
+      description:
+        type: string
+      evidence:
+        type:
+          - string
+          - "null"
+      affected_artifact:
+        type:
+          - string
+          - "null"
+      recommended_fix:
+        type:
+          - string
+          - "null"
+
+examples:
+  - execution_id: "22222222-2222-4222-8222-222222222222"
+    parent_execution_id: null
+    context:
+      project_id: lapop-agent-governance
+      session_id: session-2026-04-27-a
+      cycle_id: cycle-003-execution-record-schema
+      run_id: run-0001
+    task_request:
+      request_id: "33333333-3333-4333-8333-333333333333"
+      user_prompt_summary: "Create canonical execution-record schema."
+      raw_user_prompt_ref: null
+      submitted_at: "2026-04-27T00:00:00Z"
+      requested_outputs:
+        - schemas/execution-record.schema.yaml
+      constraints:
+        - "One schema at a time."
+      attachments: []
+      risk_notes: []
+    execution_state: completed
+    task_graph: []
+    agent_assignments: []
+    artifacts:
+      inputs: []
+      produced:
+        - artifact_id: schema.execution-record
+          artifact_type: schema
+          path: schemas/execution-record.schema.yaml
+          version_id: null
+          hash: null
+          created_by: supervisor
+          created_at: "2026-04-27T00:00:00Z"
+      modified: []
+      accepted: []
+      rejected: []
+    validation_reports: []
+    audit_reports: []
+    dependency_notes: []
+    merge_log: null
+    policy_refs:
+      policy_checked: false
+      allowance_result_ids: []
+      policy_attestation_ids: []
+      effective_policy_hashes: []
+      unresolved_policy_conflicts: []
+    strategy_refs:
+      strategy_ledger_head: null
+      strategy_updates_proposed: []
+      strategy_updates_applied: []
+      benchmark_gate_result_ids: []
+      learning_eligible: false
+    economic_refs:
+      voi_decision_ids: []
+      economic_regret_ids: []
+    collaboration_refs:
+      collaboration_health_report_ids: []
+      disagreement_record_ids: []
+      trust_update_event_ids: []
+    temporal_refs:
+      temporal_status_report_ids: []
+      rollback_candidate_ids: []
+      rollback_execution_ids: []
+      stale_branch_ids: []
+      oscillation_record_ids: []
+      deadlock_record_ids: []
+    checkpoints: []
+    side_effects: []
+    failure_events: []
+    contamination:
+      contamination_free: true
+      contamination_status: clean
+      contamination_sources: []
+      learning_allowed: false
+      trust_update_allowed: false
+      memory_write_allowed: false
+      quarantine_required: false
+      contamination_notes: null
+    reproducibility_profile:
+      model_id: null
+      model_version: null
+      prompt_template_version: null
+      retrieval_snapshot_id: null
+      temperature: null
+      top_p: null
+      deterministic_mode: false
+      seed: null
+      tool_versions: {}
+      environment_hash: null
+      replay_eligible: false
+      replay_notes: "Manual paste workflow."
+    final_decision:
+      decision: accept
+      rationale: "Schema artifact produced for user review."
+      decided_by: supervisor
+      decided_at: "2026-04-27T00:00:00Z"
+    created_at: "2026-04-27T00:00:00Z"
+    updated_at: "2026-04-27T00:00:00Z"
+    completed_at: "2026-04-27T00:00:00Z"
+    tags:
+      - schema
+      - execution-record
+      - canonical
