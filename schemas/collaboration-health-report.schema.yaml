@@ -1,0 +1,1064 @@
+# schemas/collaboration-health-report.schema.yaml
+#
+# Canonical shared CollaborationHealthReport schema for lapop-agent-governance.
+#
+# Purpose:
+#   CollaborationHealthReport is the structured health assessment emitted by
+#   CHL-003. It records boundary health, dependency-note health, trust signals,
+#   disagreement state, merge health, contamination effects, human review burden,
+#   emergence risk, and intervention recommendations.
+#
+# Status:
+#   v0.2 schema-normalization candidate
+
+schema_id: collaboration-health-report
+schema_version: "0.2.0"
+schema_kind: canonical_shared_schema
+schema_owner: CHL-003
+schema_status: draft
+
+title: CollaborationHealthReport
+description: >
+  Canonical collaboration health report for governed multi-agent LLM execution.
+  This object is emitted by CHL-003 and consumed by LAPOP, CDO, SLL, EIL,
+  PCL, and TGL. It summarizes whether collaboration is healthy, strained,
+  unstable, critical, or contaminated, and recommends interventions when
+  boundary discipline, dependency notes, disagreement, trust, merge quality,
+  human review burden, or emergence risk degrade.
+
+type: object
+additionalProperties: false
+
+required:
+  - report_id
+  - context_ref
+  - report_scope
+  - boundary_health
+  - dependency_health
+  - trust_summary
+  - disagreement_summary
+  - merge_health
+  - contamination_summary
+  - human_review_summary
+  - emergence_risk
+  - intervention_recommendations
+  - overall_health_score
+  - health_status
+  - contamination_free
+  - created_at
+
+properties:
+  report_id:
+    type: string
+    format: uuid
+    description: >
+      Stable UUID for this collaboration health report.
+
+  parent_report_id:
+    type:
+      - string
+      - "null"
+    format: uuid
+    description: >
+      Optional prior report if this report supersedes, updates, or continues
+      a previous collaboration health assessment.
+
+  context_ref:
+    type: object
+    additionalProperties: false
+    required:
+      - project_id
+      - session_id
+      - cycle_id
+      - run_id
+    properties:
+      project_id:
+        type: string
+        minLength: 1
+      repository_id:
+        type:
+          - string
+          - "null"
+      session_id:
+        type: string
+        minLength: 1
+      cycle_id:
+        type: string
+        minLength: 1
+      run_id:
+        type: string
+        minLength: 1
+      execution_id:
+        type:
+          - string
+          - "null"
+        format: uuid
+      branch_id:
+        type:
+          - string
+          - "null"
+      task_node_id:
+        type:
+          - string
+          - "null"
+        format: uuid
+
+  report_scope:
+    type: object
+    additionalProperties: false
+    required:
+      - scope_type
+      - cycle_window_start
+      - cycle_window_end
+      - execution_record_ids
+      - artifacts_considered
+    properties:
+      scope_type:
+        type: string
+        enum:
+          - single_execution
+          - cycle_window
+          - branch
+          - project
+          - artifact_set
+          - full_stack
+      cycle_window_start:
+        type:
+          - integer
+          - "null"
+        minimum: 0
+      cycle_window_end:
+        type:
+          - integer
+          - "null"
+        minimum: 0
+      execution_record_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+      artifacts_considered:
+        type: array
+        items:
+          type: string
+        default: []
+      agents_considered:
+        type: array
+        items:
+          type: string
+        default: []
+
+  boundary_health:
+    type: object
+    additionalProperties: false
+    required:
+      - boundary_violation_count
+      - unauthorized_edit_count
+      - dependency_note_bypass_count
+      - interface_violation_count
+      - schema_violation_count
+      - ownership_conflict_count
+      - boundary_expansion_count
+      - resolved_violation_count
+      - unresolved_violation_count
+      - boundary_health_score
+      - main_issues
+    properties:
+      boundary_violation_count:
+        type: integer
+        minimum: 0
+      unauthorized_edit_count:
+        type: integer
+        minimum: 0
+      dependency_note_bypass_count:
+        type: integer
+        minimum: 0
+      interface_violation_count:
+        type: integer
+        minimum: 0
+      schema_violation_count:
+        type: integer
+        minimum: 0
+      ownership_conflict_count:
+        type: integer
+        minimum: 0
+      boundary_expansion_count:
+        type: integer
+        minimum: 0
+      resolved_violation_count:
+        type: integer
+        minimum: 0
+      unresolved_violation_count:
+        type: integer
+        minimum: 0
+      boundary_health_score:
+        type: number
+        minimum: 0
+        maximum: 1
+      main_issues:
+        type: array
+        items:
+          type: string
+        default: []
+      violation_refs:
+        type: array
+        items:
+          type: string
+        default: []
+
+  dependency_health:
+    type: object
+    additionalProperties: false
+    required:
+      - total_notes
+      - open_notes
+      - acknowledged_notes
+      - deferred_notes
+      - resolved_notes
+      - superseded_notes
+      - rejected_notes
+      - blocking_notes
+      - stale_notes
+      - note_density_status
+      - note_density_score
+      - blocking_pressure_score
+      - dependency_health_score
+      - main_issues
+    properties:
+      total_notes:
+        type: integer
+        minimum: 0
+      open_notes:
+        type: integer
+        minimum: 0
+      acknowledged_notes:
+        type: integer
+        minimum: 0
+      deferred_notes:
+        type: integer
+        minimum: 0
+      resolved_notes:
+        type: integer
+        minimum: 0
+      superseded_notes:
+        type: integer
+        minimum: 0
+      rejected_notes:
+        type: integer
+        minimum: 0
+      blocking_notes:
+        type: integer
+        minimum: 0
+      stale_notes:
+        type: integer
+        minimum: 0
+      average_resolution_cycles:
+        type:
+          - number
+          - "null"
+        minimum: 0
+      note_density_status:
+        type: string
+        enum:
+          - low
+          - normal
+          - high
+          - excessive
+          - unknown
+      note_density_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: >
+          Higher score means healthier note density.
+      blocking_pressure_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: >
+          Higher score means blocking pressure is manageable.
+      dependency_health_score:
+        type: number
+        minimum: 0
+        maximum: 1
+      main_issues:
+        type: array
+        items:
+          type: string
+        default: []
+      note_refs:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+
+  trust_summary:
+    type: object
+    additionalProperties: false
+    required:
+      - trust_update_allowed
+      - graph_id
+      - node_count
+      - edge_count
+      - average_trust_score
+      - trust_variance
+      - trust_decay_applied
+      - contaminated_runs_excluded
+      - trust_health_score
+      - high_trust_signals
+      - low_trust_signals
+      - trust_risks
+    properties:
+      trust_update_allowed:
+        type: boolean
+        description: >
+          Whether trust updates are allowed from the assessed records.
+      graph_id:
+        type:
+          - string
+          - "null"
+        format: uuid
+      node_count:
+        type: integer
+        minimum: 0
+      edge_count:
+        type: integer
+        minimum: 0
+      average_trust_score:
+        type:
+          - number
+          - "null"
+        minimum: 0
+        maximum: 1
+      trust_variance:
+        type:
+          - number
+          - "null"
+        minimum: 0
+      low_trust_nodes:
+        type: array
+        items:
+          type: string
+        default: []
+      high_trust_nodes:
+        type: array
+        items:
+          type: string
+        default: []
+      trust_decay_applied:
+        type: boolean
+      contaminated_runs_excluded:
+        type: integer
+        minimum: 0
+      trust_health_score:
+        type: number
+        minimum: 0
+        maximum: 1
+      high_trust_signals:
+        type: array
+        items:
+          type: string
+        default: []
+      low_trust_signals:
+        type: array
+        items:
+          type: string
+        default: []
+      trust_risks:
+        type: array
+        items:
+          type: string
+        default: []
+      trust_update_event_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+
+  disagreement_summary:
+    type: object
+    additionalProperties: false
+    required:
+      - total_disagreements
+      - open_disagreements
+      - preserved_disagreements
+      - resolved_disagreements
+      - merge_blocking_disagreements
+      - high_value_disagreements
+      - disagreement_density_score
+      - disagreement_health_score
+      - preserve_disagreement_recommended
+      - disagreement_records_to_create
+    properties:
+      total_disagreements:
+        type: integer
+        minimum: 0
+      open_disagreements:
+        type: integer
+        minimum: 0
+      preserved_disagreements:
+        type: integer
+        minimum: 0
+      resolved_disagreements:
+        type: integer
+        minimum: 0
+      merge_blocking_disagreements:
+        type: integer
+        minimum: 0
+      high_value_disagreements:
+        type: integer
+        minimum: 0
+      disagreement_density_score:
+        type: number
+        minimum: 0
+        maximum: 1
+      disagreement_health_score:
+        type: number
+        minimum: 0
+        maximum: 1
+      preserve_disagreement_recommended:
+        type: boolean
+      disagreement_records_to_create:
+        type: array
+        items:
+          $ref: "#/$defs/DisagreementCandidate"
+        default: []
+      disagreement_record_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+
+  merge_health:
+    type: object
+    additionalProperties: false
+    required:
+      - total_merges
+      - direct_accept_merges
+      - supervisor_merges
+      - human_reviewed_merges
+      - preserved_disagreement_merges
+      - rejected_merges
+      - merge_reversal_count
+      - average_merge_regret_score
+      - merge_conflict_count
+      - merge_reversal_risk
+      - merge_health_score
+      - merge_regret_signals
+    properties:
+      total_merges:
+        type: integer
+        minimum: 0
+      direct_accept_merges:
+        type: integer
+        minimum: 0
+      supervisor_merges:
+        type: integer
+        minimum: 0
+      human_reviewed_merges:
+        type: integer
+        minimum: 0
+      preserved_disagreement_merges:
+        type: integer
+        minimum: 0
+      rejected_merges:
+        type: integer
+        minimum: 0
+      merge_reversal_count:
+        type: integer
+        minimum: 0
+      average_merge_regret_score:
+        type:
+          - number
+          - "null"
+        minimum: 0
+        maximum: 1
+      merge_conflict_count:
+        type: integer
+        minimum: 0
+      merge_reversal_risk:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+          - unknown
+      merge_health_score:
+        type: number
+        minimum: 0
+        maximum: 1
+      merge_regret_signals:
+        type: array
+        items:
+          type: string
+        default: []
+      merge_log_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+        default: []
+
+  contamination_summary:
+    type: object
+    additionalProperties: false
+    required:
+      - contaminated_execution_count
+      - contamination_sources
+      - contaminated_trust_updates_blocked
+      - contaminated_strategy_updates_blocked
+      - contamination_health_score
+      - contamination_free
+    properties:
+      contaminated_execution_count:
+        type: integer
+        minimum: 0
+      contamination_sources:
+        type: array
+        items:
+          type: string
+          enum:
+            - hallucinated_evidence
+            - critic_hallucination
+            - unsupported_claim
+            - fabricated_test_result
+            - failed_repair
+            - boundary_violation
+            - policy_denied_action
+            - stale_branch
+            - unverified_artifact
+            - missing_provenance
+            - other
+        default: []
+      contaminated_trust_updates_blocked:
+        type: integer
+        minimum: 0
+      contaminated_strategy_updates_blocked:
+        type: integer
+        minimum: 0
+      contamination_health_score:
+        type: number
+        minimum: 0
+        maximum: 1
+      contamination_free:
+        type: boolean
+      quarantine_recommended:
+        type: boolean
+        default: false
+      contamination_notes:
+        type:
+          - string
+          - "null"
+
+  human_review_summary:
+    type: object
+    additionalProperties: false
+    required:
+      - human_reviews_requested
+      - human_reviews_completed
+      - human_reviews_deferred
+      - human_review_reversal_count
+      - unnecessary_human_review_count
+      - missed_human_review_count
+      - human_review_burden_score
+      - burden_status
+      - issues
+    properties:
+      human_reviews_requested:
+        type: integer
+        minimum: 0
+      human_reviews_completed:
+        type: integer
+        minimum: 0
+      human_reviews_deferred:
+        type: integer
+        minimum: 0
+      human_review_reversal_count:
+        type: integer
+        minimum: 0
+      unnecessary_human_review_count:
+        type: integer
+        minimum: 0
+      missed_human_review_count:
+        type: integer
+        minimum: 0
+      average_review_latency_seconds:
+        type:
+          - number
+          - "null"
+        minimum: 0
+      human_review_burden_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: >
+          Higher score means human review burden is healthier/lower.
+      burden_status:
+        type: string
+        enum:
+          - low
+          - normal
+          - high
+          - overloaded
+          - unknown
+      issues:
+        type: array
+        items:
+          type: string
+        default: []
+
+  emergence_risk:
+    type: object
+    additionalProperties: false
+    required:
+      - circular_dependency_count
+      - oscillation_signal_count
+      - repeated_repair_loop_count
+      - policy_exception_spike
+      - trust_collapse_signal
+      - note_ping_pong_count
+      - model_monoculture_score
+      - coordination_overhead_score
+      - emergence_risk_score
+      - recommended_action
+      - detected_patterns
+    properties:
+      circular_dependency_count:
+        type: integer
+        minimum: 0
+      oscillation_signal_count:
+        type: integer
+        minimum: 0
+      repeated_repair_loop_count:
+        type: integer
+        minimum: 0
+      policy_exception_spike:
+        type: boolean
+      trust_collapse_signal:
+        type: boolean
+      note_ping_pong_count:
+        type: integer
+        minimum: 0
+      model_monoculture_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: >
+          Higher means more monoculture risk.
+      coordination_overhead_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: >
+          Higher means more coordination overhead risk.
+      emergence_risk_score:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: >
+          Higher means more emergence/interaction risk.
+      recommended_action:
+        type: string
+        enum:
+          - none
+          - supervisor_review
+          - human_review
+          - policy_review
+          - temporal_freeze
+          - strategy_rollback
+          - split_task
+          - rollback
+          - quarantine
+      detected_patterns:
+        type: array
+        items:
+          $ref: "#/$defs/EmergencePattern"
+        default: []
+
+  intervention_recommendations:
+    type: array
+    items:
+      $ref: "#/$defs/InterventionRecommendation"
+    default: []
+
+  overall_health_score:
+    type: number
+    minimum: 0
+    maximum: 1
+    description: >
+      Composite collaboration health score. Higher is healthier.
+
+  health_status:
+    type: string
+    enum:
+      - healthy
+      - strained
+      - unstable
+      - critical
+      - contaminated
+
+  contamination_free:
+    type: boolean
+    description: >
+      Whether the assessed collaboration window is free of contamination.
+
+  final_recommendation:
+    type: object
+    additionalProperties: false
+    required:
+      - action
+      - rationale
+    properties:
+      action:
+        type: string
+        enum:
+          - continue
+          - tighten_boundaries
+          - preserve_disagreement
+          - supervisor_review
+          - human_review
+          - temporal_review
+          - policy_review
+          - strategy_review
+          - freeze_or_rollback
+          - quarantine
+      rationale:
+        type: string
+        minLength: 1
+
+  confidence:
+    type:
+      - number
+      - "null"
+    minimum: 0
+    maximum: 1
+
+  created_at:
+    type: string
+    format: date-time
+
+  updated_at:
+    type:
+      - string
+      - "null"
+    format: date-time
+
+  tags:
+    type: array
+    items:
+      type: string
+    default: []
+
+$defs:
+  DisagreementCandidate:
+    type: object
+    additionalProperties: false
+    required:
+      - summary
+      - disagreement_type
+      - blocking
+      - rationale
+      - recommended_resolution
+    properties:
+      summary:
+        type: string
+      disagreement_type:
+        type: string
+        enum:
+          - factual
+          - architectural
+          - policy
+          - interface
+          - schema
+          - validation
+          - interpretation
+          - priority
+          - economic
+          - temporal
+          - other
+      blocking:
+        type: boolean
+      rationale:
+        type: string
+      recommended_resolution:
+        type: string
+        enum:
+          - preserve
+          - audit
+          - supervisor_review
+          - human_review
+          - policy_review
+          - temporal_review
+          - economic_review
+          - reject_invalid_side
+      involved_artifacts:
+        type: array
+        items:
+          type: string
+        default: []
+      involved_agents:
+        type: array
+        items:
+          type: string
+        default: []
+
+  EmergencePattern:
+    type: object
+    additionalProperties: false
+    required:
+      - pattern_type
+      - evidence
+      - severity
+      - recommended_layer
+    properties:
+      pattern_type:
+        type: string
+        enum:
+          - circular_dependency
+          - note_ping_pong
+          - repeated_repair_loop
+          - policy_exception_spike
+          - trust_collapse
+          - model_monoculture
+          - coordination_overhead_explosion
+          - merge_rollback_loop
+          - validation_repair_loop
+          - other
+      evidence:
+        type: string
+      severity:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+      recommended_layer:
+        type: string
+        enum:
+          - LAPOP
+          - CDO
+          - PCL
+          - SLL
+          - EIL
+          - CHL
+          - TGL
+          - Supervisor
+          - Human
+      recommended_action:
+        type:
+          - string
+          - "null"
+
+  InterventionRecommendation:
+    type: object
+    additionalProperties: false
+    required:
+      - recommendation_id
+      - intervention_type
+      - priority
+      - blocking
+      - rationale
+      - target_layer
+    properties:
+      recommendation_id:
+        type: string
+        format: uuid
+      intervention_type:
+        type: string
+        enum:
+          - supervisor_review
+          - human_review
+          - policy_review
+          - temporal_review
+          - economic_review
+          - strategy_review
+          - boundary_tightening
+          - preserve_disagreement
+          - freeze_artifact
+          - split_task
+          - rollback
+          - quarantine
+      priority:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+          - critical
+      blocking:
+        type: boolean
+      rationale:
+        type: string
+      target_layer:
+        type: string
+        enum:
+          - LAPOP
+          - CDO
+          - PCL
+          - SLL
+          - EIL
+          - CHL
+          - TGL
+          - Supervisor
+          - Human
+      affected_artifacts:
+        type: array
+        items:
+          type: string
+        default: []
+      affected_agents:
+        type: array
+        items:
+          type: string
+        default: []
+      policy_check_required:
+        type: boolean
+        default: false
+
+examples:
+  - report_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    parent_report_id: null
+    context_ref:
+      project_id: lapop-agent-governance
+      repository_id: GhostMeshIO/lapop-agent-governance
+      session_id: session-2026-04-27-a
+      cycle_id: cycle-006-collaboration-health-schema
+      run_id: run-0001
+      execution_id: null
+      branch_id: main
+      task_node_id: null
+    report_scope:
+      scope_type: single_execution
+      cycle_window_start: 6
+      cycle_window_end: 6
+      execution_record_ids: []
+      artifacts_considered:
+        - schemas/collaboration-health-report.schema.yaml
+      agents_considered:
+        - supervisor
+    boundary_health:
+      boundary_violation_count: 0
+      unauthorized_edit_count: 0
+      dependency_note_bypass_count: 0
+      interface_violation_count: 0
+      schema_violation_count: 0
+      ownership_conflict_count: 0
+      boundary_expansion_count: 0
+      resolved_violation_count: 0
+      unresolved_violation_count: 0
+      boundary_health_score: 0.95
+      main_issues: []
+      violation_refs: []
+    dependency_health:
+      total_notes: 0
+      open_notes: 0
+      acknowledged_notes: 0
+      deferred_notes: 0
+      resolved_notes: 0
+      superseded_notes: 0
+      rejected_notes: 0
+      blocking_notes: 0
+      stale_notes: 0
+      average_resolution_cycles: null
+      note_density_status: low
+      note_density_score: 0.95
+      blocking_pressure_score: 0.95
+      dependency_health_score: 0.95
+      main_issues: []
+      note_refs: []
+    trust_summary:
+      trust_update_allowed: false
+      graph_id: null
+      node_count: 0
+      edge_count: 0
+      average_trust_score: null
+      trust_variance: null
+      low_trust_nodes: []
+      high_trust_nodes: []
+      trust_decay_applied: false
+      contaminated_runs_excluded: 0
+      trust_health_score: 0.90
+      high_trust_signals:
+        - "Schema output followed requested scope."
+      low_trust_signals: []
+      trust_risks:
+        - "Manual workflow does not provide enough evidence for durable trust update."
+      trust_update_event_ids: []
+    disagreement_summary:
+      total_disagreements: 0
+      open_disagreements: 0
+      preserved_disagreements: 0
+      resolved_disagreements: 0
+      merge_blocking_disagreements: 0
+      high_value_disagreements: 0
+      disagreement_density_score: 0.95
+      disagreement_health_score: 0.95
+      preserve_disagreement_recommended: false
+      disagreement_records_to_create: []
+      disagreement_record_ids: []
+    merge_health:
+      total_merges: 0
+      direct_accept_merges: 0
+      supervisor_merges: 0
+      human_reviewed_merges: 0
+      preserved_disagreement_merges: 0
+      rejected_merges: 0
+      merge_reversal_count: 0
+      average_merge_regret_score: null
+      merge_conflict_count: 0
+      merge_reversal_risk: low
+      merge_health_score: 0.90
+      merge_regret_signals: []
+      merge_log_ids: []
+    contamination_summary:
+      contaminated_execution_count: 0
+      contamination_sources: []
+      contaminated_trust_updates_blocked: 0
+      contaminated_strategy_updates_blocked: 0
+      contamination_health_score: 1.0
+      contamination_free: true
+      quarantine_recommended: false
+      contamination_notes: null
+    human_review_summary:
+      human_reviews_requested: 0
+      human_reviews_completed: 0
+      human_reviews_deferred: 0
+      human_review_reversal_count: 0
+      unnecessary_human_review_count: 0
+      missed_human_review_count: 0
+      average_review_latency_seconds: null
+      human_review_burden_score: 0.95
+      burden_status: low
+      issues: []
+    emergence_risk:
+      circular_dependency_count: 0
+      oscillation_signal_count: 0
+      repeated_repair_loop_count: 0
+      policy_exception_spike: false
+      trust_collapse_signal: false
+      note_ping_pong_count: 0
+      model_monoculture_score: 0.10
+      coordination_overhead_score: 0.10
+      emergence_risk_score: 0.05
+      recommended_action: none
+      detected_patterns: []
+    intervention_recommendations: []
+    overall_health_score: 0.94
+    health_status: healthy
+    contamination_free: true
+    final_recommendation:
+      action: continue
+      rationale: "Collaboration health is sufficient for continuing schema drafting."
+    confidence: 0.72
+    created_at: "2026-04-27T00:00:00Z"
+    updated_at: null
+    tags:
+      - collaboration-health
+      - schema
+      - canonical
