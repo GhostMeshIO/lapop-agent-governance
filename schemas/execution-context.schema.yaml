@@ -1,0 +1,511 @@
+# schemas/execution-context.schema.yaml
+#
+# Canonical shared ExecutionContext schema for lapop-agent-governance.
+#
+# Purpose:
+#   ExecutionContext is the shared identity object passed across LAPOP, CDO,
+#   PCL, SLL, EIL, CHL, and TGL. It binds a task, cycle, artifact, assignment,
+#   policy state, strategy state, checkpoint, and temporal position into one
+#   portable context object.
+#
+# Status:
+#   v0.2 schema-normalization candidate
+
+schema_id: execution-context
+schema_version: "0.2.0"
+schema_kind: canonical_shared_schema
+schema_owner: LAPOP-003
+schema_status: draft
+
+title: ExecutionContext
+description: >
+  Shared execution identity and governance context object used across the
+  LAPOP agent governance stack. This object should be passed to policy checks,
+  worker assignments, validation reports, strategy learning records, economic
+  decisions, collaboration health reports, and temporal governance actions.
+
+type: object
+additionalProperties: false
+
+required:
+  - project_id
+  - session_id
+  - cycle_id
+  - run_id
+  - created_at
+  - updated_at
+  - execution_mode
+  - governance_stack
+  - contamination_state
+
+properties:
+  project_id:
+    type: string
+    minLength: 1
+    description: >
+      Stable identifier for the project or repository being governed.
+    examples:
+      - lapop-agent-governance
+      - qnvm-simulation
+
+  repository_id:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional repository identifier, such as owner/name or local repo ID.
+    examples:
+      - GhostMeshIO/lapop-agent-governance
+
+  session_id:
+    type: string
+    minLength: 1
+    description: >
+      Identifier for the human/model session or coordination session.
+    examples:
+      - session-2026-04-27-a
+
+  cycle_id:
+    type: string
+    minLength: 1
+    description: >
+      Identifier for the current execution cycle.
+    examples:
+      - cycle-001-intake
+      - cycle-004-repair
+
+  run_id:
+    type: string
+    minLength: 1
+    description: >
+      Unique identifier for this execution run. Multiple cycles may belong to
+      the same run, or a single cycle may use one run_id depending on runner design.
+    examples:
+      - run-0001
+
+  parent_run_id:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional parent run ID if this run branches from or repairs a previous run.
+
+  branch_id:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional branch identifier for speculative, repair, rollback, or alternate-agent branches.
+    examples:
+      - main
+      - branch-repair-002
+      - branch-speculative-renderer
+
+  task_node_id:
+    type:
+      - string
+      - "null"
+    format: uuid
+    description: >
+      Optional UUID of the task node currently being executed.
+
+  parent_task_node_id:
+    type:
+      - string
+      - "null"
+    format: uuid
+    description: >
+      Optional parent task node if this node is part of a decomposed task graph.
+
+  artifact_id:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional artifact currently in scope.
+    examples:
+      - spec.LAPOP-003
+      - prompt.master-supervisor
+      - schema.execution-context
+
+  artifact_path:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional path to the artifact in a repository or workspace.
+    examples:
+      - specs/LAPOP-003.md
+      - schemas/execution-context.schema.yaml
+
+  artifact_type:
+    type:
+      - string
+      - "null"
+    enum:
+      - file
+      - module
+      - schema
+      - dataset
+      - interface
+      - config
+      - diagram
+      - report
+      - patch
+      - prompt
+      - benchmark
+      - execution_record
+      - null
+    description: >
+      Optional normalized artifact type.
+
+  agent_class:
+    type:
+      - string
+      - "null"
+    description: >
+      Agent class assigned to this context.
+    examples:
+      - supervisor
+      - implementation_worker
+      - policy_composition_worker
+      - strategy_learning_worker
+      - economic_intelligence_worker
+      - collaboration_health_worker
+      - temporal_governance_worker
+      - meta_auditor
+
+  agent_role:
+    type:
+      - string
+      - "null"
+    enum:
+      - planner
+      - worker
+      - critic
+      - auditor
+      - merger
+      - supervisor
+      - human_reviewer
+      - policy_worker
+      - strategy_worker
+      - economic_worker
+      - collaboration_worker
+      - temporal_worker
+      - null
+    description: >
+      Role of the active agent within the execution cycle.
+
+  agent_assignment_id:
+    type:
+      - string
+      - "null"
+    format: uuid
+    description: >
+      Optional UUID for the active agent assignment.
+
+  human_operator_id:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional identifier for the human operator or approving authority.
+      Avoid storing private personal details here.
+
+  execution_mode:
+    type: string
+    enum:
+      - manual_paste
+      - assisted_manual
+      - local_runner
+      - automated_runner
+      - hybrid
+      - dry_run
+      - replay
+    description: >
+      Indicates how the execution is being conducted.
+
+  side_effect_class:
+    type:
+      - string
+      - "null"
+    enum:
+      - read_only
+      - simulated
+      - advisory
+      - write_internal
+      - write_external
+      - destructive
+      - null
+    description: >
+      Highest expected side-effect class for the current context.
+
+  risk_level:
+    type:
+      - string
+      - "null"
+    enum:
+      - low
+      - medium
+      - high
+      - critical
+      - unknown
+      - null
+    description: >
+      Estimated risk level of the current task/action.
+
+  created_at:
+    type: string
+    format: date-time
+    description: >
+      Timestamp when this context was created.
+
+  updated_at:
+    type: string
+    format: date-time
+    description: >
+      Timestamp when this context was last updated.
+
+  checkpoint_hash:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional hash of the active checkpoint.
+
+  checkpoint_id:
+    type:
+      - string
+      - "null"
+    format: uuid
+    description: >
+      Optional checkpoint record UUID.
+
+  policy_attestation_id:
+    type:
+      - string
+      - "null"
+    format: uuid
+    description: >
+      Optional policy attestation record active for this context.
+
+  effective_policy_hash:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional hash of the active effective policy set.
+
+  strategy_ledger_head:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional current strategy ledger head. Used by SLL and TGL for rollback-compatible strategy state.
+
+  temporal_position:
+    type: object
+    additionalProperties: false
+    required:
+      - cycle_index
+      - branch_depth
+      - replay_index
+    properties:
+      cycle_index:
+        type: integer
+        minimum: 0
+        description: Numeric index of the current cycle.
+      branch_depth:
+        type: integer
+        minimum: 0
+        description: Branch depth from mainline.
+      replay_index:
+        type: integer
+        minimum: 0
+        description: Replay attempt index. Zero for original execution.
+
+  governance_stack:
+    type: object
+    additionalProperties: false
+    required:
+      - lapop_version
+      - cdo_version
+      - pcl_version
+      - sll_version
+      - eil_version
+      - chl_version
+      - tgl_version
+    properties:
+      lapop_version:
+        type: string
+        examples: ["LAPOP-003"]
+      cdo_version:
+        type: string
+        examples: ["CDO-003"]
+      pcl_version:
+        type: string
+        examples: ["PCL-003"]
+      sll_version:
+        type: string
+        examples: ["SLL-003"]
+      eil_version:
+        type: string
+        examples: ["EIL-003"]
+      chl_version:
+        type: string
+        examples: ["CHL-003"]
+      tgl_version:
+        type: string
+        examples: ["TGL-003"]
+
+  contamination_state:
+    type: object
+    additionalProperties: false
+    required:
+      - contamination_free
+      - contamination_status
+      - learning_eligible
+      - trust_update_allowed
+      - memory_write_allowed
+    properties:
+      contamination_free:
+        type: boolean
+        description: >
+          True only if no contamination has been detected in this execution context.
+      contamination_status:
+        type: string
+        enum:
+          - unknown
+          - clean
+          - suspected
+          - contaminated
+          - quarantined
+      contamination_sources:
+        type: array
+        items:
+          type: string
+          enum:
+            - hallucinated_evidence
+            - unsupported_claim
+            - critic_hallucination
+            - fabricated_test_result
+            - boundary_violation
+            - policy_denied_action
+            - stale_branch
+            - unverified_artifact
+            - failed_repair
+            - missing_provenance
+            - other
+        default: []
+      learning_eligible:
+        type: boolean
+        description: >
+          Whether SLL may learn from this context.
+      trust_update_allowed:
+        type: boolean
+        description: >
+          Whether CHL may update trust from this context.
+      memory_write_allowed:
+        type: boolean
+        description: >
+          Whether validated memory write is allowed from this context.
+
+  permissions:
+    type: object
+    additionalProperties: false
+    required:
+      - allowed_actions
+      - forbidden_actions
+    properties:
+      allowed_actions:
+        type: array
+        items:
+          type: string
+        description: >
+          Actions currently allowed in this context.
+        examples:
+          - ["read", "annotate", "propose_change"]
+      forbidden_actions:
+        type: array
+        items:
+          type: string
+        description: >
+          Actions explicitly forbidden in this context.
+        examples:
+          - ["modify_unowned", "publish_without_validation"]
+
+  tags:
+    type: array
+    items:
+      type: string
+    default: []
+    description: >
+      Optional tags for routing, search, reporting, or governance classification.
+
+  notes:
+    type:
+      - string
+      - "null"
+    description: >
+      Optional human-readable notes. Avoid storing sensitive or private information unless required.
+
+examples:
+  - project_id: lapop-agent-governance
+    repository_id: GhostMeshIO/lapop-agent-governance
+    session_id: session-2026-04-27-a
+    cycle_id: cycle-001-schema-normalization
+    run_id: run-0001
+    parent_run_id: null
+    branch_id: main
+    task_node_id: null
+    parent_task_node_id: null
+    artifact_id: schema.execution-context
+    artifact_path: schemas/execution-context.schema.yaml
+    artifact_type: schema
+    agent_class: supervisor
+    agent_role: supervisor
+    agent_assignment_id: null
+    human_operator_id: null
+    execution_mode: manual_paste
+    side_effect_class: advisory
+    risk_level: low
+    created_at: "2026-04-27T00:00:00Z"
+    updated_at: "2026-04-27T00:00:00Z"
+    checkpoint_hash: null
+    checkpoint_id: null
+    policy_attestation_id: null
+    effective_policy_hash: null
+    strategy_ledger_head: null
+    temporal_position:
+      cycle_index: 1
+      branch_depth: 0
+      replay_index: 0
+    governance_stack:
+      lapop_version: LAPOP-003
+      cdo_version: CDO-003
+      pcl_version: PCL-003
+      sll_version: SLL-003
+      eil_version: EIL-003
+      chl_version: CHL-003
+      tgl_version: TGL-003
+    contamination_state:
+      contamination_free: true
+      contamination_status: clean
+      contamination_sources: []
+      learning_eligible: false
+      trust_update_allowed: false
+      memory_write_allowed: false
+    permissions:
+      allowed_actions:
+        - read
+        - annotate
+        - propose_change
+      forbidden_actions:
+        - modify_unowned
+        - publish_without_validation
+        - destructive_action
+    tags:
+      - schema
+      - canonical
+      - shared
+    notes: "Initial canonical ExecutionContext schema."
